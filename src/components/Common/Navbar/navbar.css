@@ -1,0 +1,208 @@
+/* ============================================================
+   🔝 NAVBAR — PREMIUM GLASSMORPHISM DESIGN
+   ============================================================ */
+
+.navbar-container {
+  width: 100%;
+  padding: 12px 24px;
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+  background: rgba(248, 250, 252, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+}
+
+.navbar-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   🔄 DASHBOARD SWITCH BUTTON
+   ============================================================ */
+.dashboard-btn {
+  color: white;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  letter-spacing: 0.01em;
+}
+
+.dashboard-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  filter: brightness(1.08);
+}
+
+/* ============================================================
+   👤 PROFILE SECTION
+   ============================================================ */
+.profile-section {
+  gap: 8px;
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-section:hover {
+  border-color: #e07a5f;
+  box-shadow: 0 2px 12px rgba(224, 122, 95, 0.15);
+  background: #fff8f6;
+}
+
+.profile-section:focus,
+.profile-section:focus-visible,
+.profile-section:active {
+  box-shadow: 0 0 0 3px rgba(224, 122, 95, 0.15) !important;
+  border-color: #e07a5f;
+  outline: none;
+}
+
+.profile-img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid rgba(226, 232, 240, 0.8);
+  object-fit: cover;
+}
+
+.username {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: #334155;
+}
+
+.dropdown-icon {
+  font-size: 11px;
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+}
+
+/* ============================================================
+   📋 PROFILE MODAL
+   ============================================================ */
+.modal-dialog-end {
+  margin: 0;
+  position: fixed;
+  top: 64px;
+  right: 20px;
+  width: 240px;
+  z-index: 1060;
+}
+
+.modal-content {
+  border-radius: 16px !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12) !important;
+  overflow: hidden;
+}
+
+.modal.fade .modal-dialog {
+  transform: none !important;
+  transition: none !important;
+}
+
+.modal-backdrop {
+  display: none;
+}
+
+/* Modal Profile Header */
+.modal-content .px-3.py-3 {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.modal-content .px-3.py-3 img {
+  border: 3px solid white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================
+   🚪 LOGOUT BUTTONS (Modal)
+   ============================================================ */
+.logout-btn-brown {
+  background: linear-gradient(135deg, #92400e, #78350f) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 8px 24px !important;
+  transition: all 0.2s ease !important;
+}
+
+.logout-btn-brown:hover {
+  background: linear-gradient(135deg, #78350f, #6b2f0a) !important;
+  box-shadow: 0 4px 12px rgba(146, 64, 14, 0.35) !important;
+  color: white !important;
+}
+
+.logout-btn-orange {
+  background: linear-gradient(135deg, #e07a5f, #c96745) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 8px 24px !important;
+  transition: all 0.2s ease !important;
+}
+
+.logout-btn-orange:hover {
+  background: linear-gradient(135deg, #c96745, #b55a3e) !important;
+  box-shadow: 0 4px 16px rgba(224, 122, 95, 0.4) !important;
+  color: white !important;
+}
+
+/* ============================================================
+   📱 MOBILE RESPONSIVE
+   ============================================================ */
+@media (max-width: 576px) {
+  .navbar-container {
+    padding: 10px 16px;
+  }
+
+  .navbar-row {
+    flex-wrap: nowrap !important;
+    justify-content: flex-end !important;
+    gap: 8px;
+    overflow: visible !important;
+    position: relative;
+  }
+
+  .username {
+    display: none !important;
+  }
+
+  .dashboard-btn span {
+    display: none;
+  }
+
+  .dashboard-btn {
+    padding: 8px 10px;
+  }
+
+  .profile-section {
+    padding: 6px 8px;
+  }
+}

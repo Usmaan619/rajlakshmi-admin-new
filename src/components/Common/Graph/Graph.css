@@ -1,0 +1,38 @@
+.graph-container {
+  background: white;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+}
+
+.graph-container .recent-tble-header {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 16px 20px !important;
+}
+
+.chart-scroll-wrapper {
+  background: white;
+  padding: 8px 8px 12px;
+}
+
+.chart-scroll-inner {
+  width: 100%;
+}
+
+.h5.val.fw-bold {
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+}
+
+@media screen and (max-width: 768px) {
+  .chart-scroll-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .chart-scroll-inner {
+    min-width: 500px !important;
+  }
+}

@@ -1,0 +1,217 @@
+/* ============================================================
+   🔽 DROPDOWN / FILTER — MODERN CLEAN DESIGN
+   ============================================================ */
+
+.filter-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+/* Main Filter Button */
+.custom-btn {
+  background: linear-gradient(135deg, #e07a5f, #c96745);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 120px;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(224, 122, 95, 0.3);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.custom-btn:focus,
+.custom-btn:hover {
+  background: linear-gradient(135deg, #c96745, #b55a3e);
+  outline: none;
+  box-shadow: 0 4px 16px rgba(224, 122, 95, 0.4);
+}
+
+/* Date Display Box */
+.date-display {
+  border: 1px solid rgba(224, 122, 95, 0.3);
+  padding: 7px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(224, 122, 95, 0.06);
+  color: #e07a5f;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+/* Dropdown panel */
+.main-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  display: flex;
+  background-color: transparent;
+  z-index: 100;
+  gap: 6px;
+}
+
+/* Sub-options list */
+.sub-options {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  width: 130px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.sub-options button {
+  background-color: white;
+  color: #334155;
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.sub-options button:last-child {
+  border-bottom: none;
+}
+
+.sub-options button:hover,
+.sub-options button:focus {
+  background: rgba(224, 122, 95, 0.08);
+  color: #e07a5f;
+  outline: none;
+}
+
+/* Month Dropdown */
+.month-dropdown,
+.rajlaxmi-month-dropdown {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 6px 0;
+  width: 140px;
+  margin-left: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.month-dropdown::-webkit-scrollbar,
+.rajlaxmi-month-dropdown::-webkit-scrollbar {
+  width: 4px;
+}
+.month-dropdown::-webkit-scrollbar-thumb,
+.rajlaxmi-month-dropdown::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.month-dropdown label,
+.rajlaxmi-month-dropdown label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.month-dropdown label:hover,
+.rajlaxmi-month-dropdown label:hover {
+  background: rgba(224, 122, 95, 0.06);
+  color: #e07a5f;
+}
+
+.month-dropdown input[type="checkbox"],
+.rajlaxmi-month-dropdown input[type="checkbox"] {
+  accent-color: #e07a5f;
+  width: 14px;
+  height: 14px;
+}
+
+/* Year Dropdown */
+.year-dropdown,
+.rajlaxmi-year-dropdown {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 6px 0;
+  width: 95px;
+  margin-left: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.year-dropdown div,
+.rajlaxmi-year-dropdown div {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.year-dropdown div:hover,
+.rajlaxmi-year-dropdown div:hover {
+  background: rgba(224, 122, 95, 0.06);
+  color: #e07a5f;
+}
+
+/* Rajlaxmi/Brown theme variants — unified now */
+.rajlaxmi-date-display {
+  background-color: rgba(224, 122, 95, 0.06) !important;
+  color: #e07a5f !important;
+  border: 1px solid rgba(224, 122, 95, 0.3) !important;
+}
+
+.rajlaxmi-btn {
+  background: linear-gradient(135deg, #e07a5f, #c96745) !important;
+  color: white !important;
+}
+
+.rajlaxmi-btn:hover {
+  background: linear-gradient(135deg, #c96745, #b55a3e) !important;
+}
+
+.rajlaxmi-dropdown-btn {
+  background-color: white !important;
+  color: #334155 !important;
+}
+
+.rajlaxmi-dropdown-btn:hover {
+  background: rgba(224, 122, 95, 0.08) !important;
+  color: #e07a5f !important;
+}
+
+/* Mobile */
+@media (max-width: 390px) {
+  .filter-container {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  .date-display,
+  .custom-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}

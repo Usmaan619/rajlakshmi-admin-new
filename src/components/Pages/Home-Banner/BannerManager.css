@@ -1,0 +1,350 @@
+/* ========================
+   Main Layout
+   ======================== */
+.banner-container {
+  min-height: 100vh;
+  display: flex;
+  background-color: #f9fafb;
+}
+
+.banner-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.banner-main {
+  flex: 1;
+  padding: 2rem;
+}
+
+/* ========================
+   Loading State
+   ======================== */
+.banner-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.banner-spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: banner-spin 0.8s linear infinite;
+  margin-bottom: 1rem;
+}
+
+.banner-loading-text {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+@keyframes banner-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========================
+   Header Section
+   ======================== */
+.banner-header {
+  margin-bottom: 2rem;
+}
+
+.banner-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.banner-subtitle {
+  color: #6b7280;
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* ========================
+   Banner Grid
+   ======================== */
+.banner-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 1024px) {
+  .banner-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================
+   Card Styles
+   ======================== */
+.banner-card {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+
+.banner-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* ========================
+   Card Header
+   ======================== */
+.banner-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.banner-card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.banner-card-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: #d1fae5;
+  color: #065f46;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 9999px;
+}
+
+/* ========================
+   Card Body
+   ======================== */
+.banner-card-body {
+  padding: 1.5rem;
+}
+
+/* ========================
+   Image Preview
+   ======================== */
+.banner-image-wrapper {
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.banner-image {
+  width: 100%;
+  height: 12rem;
+  object-fit: cover;
+  display: block;
+}
+
+.banner-image-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+}
+
+.banner-image-wrapper:hover .banner-image-overlay {
+  opacity: 1;
+}
+
+.banner-overlay-icon {
+  width: 3rem;
+  height: 3rem;
+  color: white;
+}
+
+/* ========================
+   Placeholder (No Image)
+   ======================== */
+.banner-placeholder {
+  width: 100%;
+  height: 12rem;
+  background: #f3f4f6;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+}
+
+.banner-placeholder-icon {
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 0.5rem;
+}
+
+.banner-placeholder-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.banner-placeholder-subtext {
+  font-size: 0.75rem;
+  margin: 0.25rem 0 0 0;
+}
+
+/* ========================
+   Upload Section
+   ======================== */
+.banner-upload {
+  margin-top: 1rem;
+}
+
+.banner-file-input {
+  display: none;
+}
+
+.banner-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #2563eb;
+  color: white;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border: none;
+  font-size: 0.875rem;
+}
+
+.banner-upload-btn:hover {
+  background: #1d4ed8;
+}
+
+.banner-upload-btn-disabled {
+  background: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.banner-upload-btn-disabled:hover {
+  background: #d1d5db;
+}
+
+.banner-btn-icon,
+.banner-btn-spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-right: 0.5rem;
+  display: inline-block;
+}
+
+.banner-btn-spinner {
+  animation: banner-spin 1s linear infinite;
+}
+
+.banner-spinner-circle {
+  opacity: 0.25;
+}
+
+.banner-spinner-path {
+  opacity: 0.75;
+}
+
+.banner-upload-hint {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0.5rem 0 0 0;
+}
+
+/* ========================
+   Guidelines Card
+   ======================== */
+.banner-guidelines-card {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.banner-guidelines-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e3a8a;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+}
+
+.banner-guidelines-emoji {
+  margin-right: 0.5rem;
+}
+
+.banner-guidelines-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .banner-guidelines-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.banner-guideline-item {
+  display: flex;
+  align-items: center;
+  color: #1e40af;
+}
+
+.banner-guideline-emoji {
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+/* ========================
+   Responsive Adjustments
+   ======================== */
+@media (max-width: 768px) {
+  .banner-main {
+    padding: 1rem;
+  }
+
+  .banner-title {
+    font-size: 1.5rem;
+  }
+
+  .banner-image,
+  .banner-placeholder {
+    height: 10rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .banner-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

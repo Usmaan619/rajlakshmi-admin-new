@@ -1,0 +1,14 @@
+/* Dashboard Card specific overrides */
+.dashboard-card {
+  min-height: 110px;
+  cursor: default;
+}
+
+.dashboard-card:hover .dashboard-img-circle {
+  transform: scale(1.08);
+  transition: transform 0.2s ease;
+}
+
+.dashboard-img-circle {
+  transition: transform 0.2s ease;
+}
