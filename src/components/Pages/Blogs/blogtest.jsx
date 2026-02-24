@@ -44,7 +44,7 @@ const BlogManager = () => {
     setLoading(true);
 
     try {
-      const res = await getData(`blogs?page=${pageNo}&limit=${limit}`);
+      const res = await getData(`admin/blogs?page=${pageNo}&limit=${limit}`);
 
       console.log("BLOG API RESPONSE:", res);
 
@@ -77,7 +77,7 @@ const BlogManager = () => {
     }
 
     try {
-      const res = await postFormData("/blogs/create", blogData);
+      const res = await postFormData("admin/blogs/create", blogData);
       toastSuccess("Blog created successfully!");
       fetchBlogs();
       setCurrentView("list");
@@ -89,7 +89,7 @@ const BlogManager = () => {
 
   const updateBlog = async (id, blogData) => {
     try {
-      await postFormData(`/blogs/update/${id}`, blogData);
+      await postFormData(`admin/blogs/update/${id}`, blogData);
       toastSuccess("Blog updated successfully!");
       fetchBlogs();
       setCurrentView("list");
@@ -103,7 +103,7 @@ const BlogManager = () => {
     if (!window.confirm("Are you sure you want to delete this blog?")) return;
 
     try {
-      await deleteData("blogs", id);
+      await deleteData("admin/blogs", id);
 
       toastSuccess("Blog deleted successfully!");
       fetchBlogs(page);
@@ -174,26 +174,12 @@ const BlogManager = () => {
   };
 
   return (
-    <div className="container-fluid px-4 gauswarn-bg-color min-vh-100">
-      <Navbar />
-      <div className="row">
-        <div className="col-lg-2">
-          <Sidebar />
-        </div>
-        <div className="col-lg-10 px-lg-5 py-4">{renderCurrentView()}</div>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
+      <Sidebar />
+      <div className="main-content" style={{ flex: 1, minWidth: 0 }}>
+        <Navbar />
+        <div style={{ padding: "24px 28px" }}>{renderCurrentView()}</div>
       </div>
-
-      <style jsx>{`
-        .hover-lift:hover {
-          transform: translateY(-5px);
-        }
-        .blog-card-hover:hover {
-          transform: translateY(-4px);
-        }
-        .action-card-hover:hover {
-          transform: translateY(-8px);
-        }
-      `}</style>
     </div>
   );
 };
@@ -202,60 +188,70 @@ const BlogManager = () => {
 const BlogMain = ({ onNavigate }) => {
   return (
     <div>
-      {" "}
-      <div>
-        <div style={{ textAlign: "start", marginBottom: "50px" }}>
-          <h1
-            style={{
-              fontSize: "42px",
-              fontWeight: 700,
-              //   color: "white",
-              marginBottom: "16px",
-            }}
-          >
-            Blog Manager
-          </h1>
-          <p style={{ fontSize: "18px" }}>Manage your blog posts with ease</p>
+      {/* Page Header */}
+      <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+        <div>
+          <h1 className="page-title">Blog Manager</h1>
+          <p className="page-subtitle">
+            Create, manage and publish your blog posts
+          </p>
         </div>
-
-        <div
+        <button
+          onClick={() => onNavigate("create")}
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-            gap: "30px",
-            // maxWidth: 1000,
-            margin: "0 auto",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            background: "linear-gradient(135deg, #e07a5f, #c96745)",
+            color: "white",
+            border: "none",
+            borderRadius: "10px",
+            padding: "11px 22px",
+            fontWeight: 700,
+            fontSize: "14px",
+            cursor: "pointer",
+            boxShadow: "0 4px 14px rgba(224, 122, 95, 0.35)",
           }}
         >
-          <ActionCard
-            icon={<Plus size={36} />}
-            title="Create Blog"
-            description="Write and publish new blog posts"
-            color="#10b981"
-            onClick={() => onNavigate("create")}
-          />
-          <ActionCard
-            icon={<FileText size={36} />}
-            title="View Blogs"
-            description="Browse all published blogs"
-            color="#3b82f6"
-            onClick={() => onNavigate("list")}
-          />
-          <ActionCard
-            icon={<Edit size={36} />}
-            title="Edit Blog"
-            description="Update existing blog posts"
-            color="#f59e0b"
-            onClick={() => onNavigate("list")}
-          />
-          <ActionCard
-            icon={<Trash2 size={36} />}
-            title="Delete Blog"
-            description="Remove unwanted blog posts"
-            color="#ef4444"
-            onClick={() => onNavigate("list")}
-          />
-        </div>
+          <Plus size={18} /> New Blog
+        </button>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: "24px",
+        }}
+      >
+        <ActionCard
+          icon={<Plus size={36} />}
+          title="Create Blog"
+          description="Write and publish new blog posts"
+          color="#10b981"
+          onClick={() => onNavigate("create")}
+        />
+        <ActionCard
+          icon={<FileText size={36} />}
+          title="View Blogs"
+          description="Browse all published blogs"
+          color="#3b82f6"
+          onClick={() => onNavigate("list")}
+        />
+        <ActionCard
+          icon={<Edit size={36} />}
+          title="Edit Blog"
+          description="Update existing blog posts"
+          color="#f59e0b"
+          onClick={() => onNavigate("list")}
+        />
+        <ActionCard
+          icon={<Trash2 size={36} />}
+          title="Delete Blog"
+          description="Remove unwanted blog posts"
+          color="#ef4444"
+          onClick={() => onNavigate("list")}
+        />
       </div>
     </div>
   );
@@ -330,7 +326,7 @@ const BlogList = ({
   const filteredBlogs = blogs.filter(
     (blog) =>
       blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      blog.category?.toLowerCase().includes(searchTerm.toLowerCase())
+      blog.category?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
@@ -501,6 +497,9 @@ const BlogCard = ({ blog, onDelete, onNavigate }) => {
           : "0 4px 20px rgba(0,0,0,0.08)",
         transform: isHovered ? "translateY(-6px)" : "translateY(0)",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
       }}
     >
       <div
@@ -523,6 +522,7 @@ const BlogCard = ({ blog, onDelete, onNavigate }) => {
               fontSize: "12px",
               fontWeight: 600,
               color: "#e07a5f",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
             }}
           >
             {blog.category}
@@ -530,94 +530,143 @@ const BlogCard = ({ blog, onDelete, onNavigate }) => {
         )}
       </div>
 
-      <div style={{ padding: "24px" }}>
+      <div
+        style={{
+          padding: "24px",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            marginBottom: "12px",
+            fontSize: "12px",
+            color: "#64748b",
+          }}
+        >
+          <span>{blog.author || "Admin"}</span>
+          <span>•</span>
+          <span>{blog.read_time || "5 min read"}</span>
+        </div>
+
         <h3
           style={{
             fontSize: "18px",
-            fontWeight: 600,
+            fontWeight: 700,
             color: "#1e293b",
-            marginBottom: "10px",
+            marginBottom: "12px",
             lineHeight: 1.4,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            height: "50px",
           }}
         >
           {blog.title}
         </h3>
 
-        <p style={{ fontSize: "13px", color: "#94a3b8", marginBottom: "20px" }}>
-          {new Date(blog.created_at).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </p>
-
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button
-            onClick={() => onNavigate("view", null, blog.slug)}
+        {blog.description && (
+          <p
             style={{
+              fontSize: "14px",
+              color: "#64748b",
+              marginBottom: "20px",
+              lineHeight: 1.5,
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
               flex: 1,
-              background: "#3b82f6",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              padding: "10px 12px",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: 500,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "6px",
-              transition: "all 0.2s",
             }}
           >
-            <Eye size={16} />
-            View
-          </button>
+            {blog.description}
+          </p>
+        )}
 
-          <button
-            onClick={() => onNavigate("edit", blog.id)}
-            style={{
-              flex: 1,
-              background: "#f59e0b",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              padding: "10px 12px",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: 500,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "6px",
-              transition: "all 0.2s",
-            }}
+        <div style={{ marginTop: "auto" }}>
+          <div
+            style={{ fontSize: "12px", color: "#94a3b8", marginBottom: "16px" }}
           >
-            <Edit size={16} />
-            Edit
-          </button>
+            {new Date(blog.created_at).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })}
+          </div>
 
-          <button
-            onClick={() => onDelete(blog.id)}
-            style={{
-              background: "#ef4444",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              padding: "10px 12px",
-              cursor: "pointer",
-              fontSize: "14px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "6px",
-              transition: "all 0.2s",
-              width: "44px",
-            }}
-          >
-            <Trash2 size={16} />
-          </button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              onClick={() => onNavigate("view", null, blog.slug)}
+              style={{
+                flex: 1,
+                background: "#3b82f6",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                padding: "10px 12px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 500,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                transition: "all 0.2s",
+              }}
+            >
+              <Eye size={16} />
+              View
+            </button>
+
+            <button
+              onClick={() => onNavigate("edit", blog.id)}
+              style={{
+                flex: 1,
+                background: "#f59e0b",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                padding: "10px 12px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 500,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                transition: "all 0.2s",
+              }}
+            >
+              <Edit size={16} />
+              Edit
+            </button>
+
+            <button
+              onClick={() => onDelete(blog.id)}
+              style={{
+                background: "#ef4444",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                padding: "10px 12px",
+                cursor: "pointer",
+                fontSize: "14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                transition: "all 0.2s",
+                width: "44px",
+              }}
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -628,36 +677,64 @@ const BlogForm = ({ onNavigate, onSubmit, blogId, title }) => {
     title: "",
     slug: "",
     category: "",
-    content: "",
+    description: "",
+    author: "Rajlakshmi Javiks",
+    read_time: "5 min read",
+    content: {
+      intro: "",
+      sections: [{ title: "", text: "", benefits: [""] }],
+      keyTakeaways: [""],
+    },
   });
 
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // 🔥 CHANGED: EDIT MODE पर data load होगा
   useEffect(() => {
     if (blogId) {
       loadBlogData();
     }
   }, [blogId]);
 
-  // 🔥 CHANGED: Backend से blog data लाने वाला function
   const loadBlogData = async () => {
     try {
-      const res = await getData(`blogs/${blogId}`);
+      const res = await getData(`admin/blogs/${blogId}`);
 
       if (res?.blog) {
         const blog = res.blog;
+
+        // Ensure structured content exists
+        let structuredContent = blog.content;
+        if (typeof structuredContent === "string") {
+          try {
+            structuredContent = JSON.parse(structuredContent);
+          } catch (e) {
+            structuredContent = {
+              intro: blog.content, // Fallback for old simple string content
+              sections: [],
+              keyTakeaways: [],
+            };
+          }
+        }
 
         setFormData({
           title: blog.title || "",
           slug: blog.slug || "",
           category: blog.category || "",
-          content: blog.content || "",
+          description: blog.description || "",
+          author: blog.author || "Rajlakshmi Javiks",
+          read_time: blog.read_time || "5 min read",
+          content: {
+            intro: structuredContent?.intro || "",
+            sections: structuredContent?.sections || [
+              { title: "", text: "", benefits: [""] },
+            ],
+            keyTakeaways: structuredContent?.keyTakeaways || [""],
+          },
         });
 
-        setImagePreview(blog.image_url || null); // पुरानी image दिखेगी
+        setImagePreview(blog.image_url || null);
       }
     } catch (err) {
       console.log("Error loading blog:", err);
@@ -675,25 +752,92 @@ const BlogForm = ({ onNavigate, onSubmit, blogId, title }) => {
     }));
   };
 
-  // Image preview + store
+  const handleContentChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      content: {
+        ...prev.content,
+        [field]: value,
+      },
+    }));
+  };
+
+  // Section Handlers
+  const handleSectionChange = (index, field, value) => {
+    const updatedSections = [...formData.content.sections];
+    updatedSections[index][field] = value;
+    handleContentChange("sections", updatedSections);
+  };
+
+  const addSection = () => {
+    handleContentChange("sections", [
+      ...formData.content.sections,
+      { title: "", text: "", benefits: [""] },
+    ]);
+  };
+
+  const removeSection = (index) => {
+    const updatedSections = formData.content.sections.filter(
+      (_, i) => i !== index,
+    );
+    handleContentChange("sections", updatedSections);
+  };
+
+  // Benefit Handlers
+  const handleBenefitChange = (sIndex, bIndex, value) => {
+    const updatedSections = [...formData.content.sections];
+    updatedSections[sIndex].benefits[bIndex] = value;
+    handleContentChange("sections", updatedSections);
+  };
+
+  const addBenefit = (sIndex) => {
+    const updatedSections = [...formData.content.sections];
+    updatedSections[sIndex].benefits.push("");
+    handleContentChange("sections", updatedSections);
+  };
+
+  const removeBenefit = (sIndex, bIndex) => {
+    const updatedSections = [...formData.content.sections];
+    updatedSections[sIndex].benefits = updatedSections[sIndex].benefits.filter(
+      (_, i) => i !== bIndex,
+    );
+    handleContentChange("sections", updatedSections);
+  };
+
+  // Takeaway Handlers
+  const handleTakeawayChange = (index, value) => {
+    const updatedTakeaways = [...formData.content.keyTakeaways];
+    updatedTakeaways[index] = value;
+    handleContentChange("keyTakeaways", updatedTakeaways);
+  };
+
+  const addTakeaway = () => {
+    handleContentChange("keyTakeaways", [...formData.content.keyTakeaways, ""]);
+  };
+
+  const removeTakeaway = (index) => {
+    const updatedTakeaways = formData.content.keyTakeaways.filter(
+      (_, i) => i !== index,
+    );
+    handleContentChange("keyTakeaways", updatedTakeaways);
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
 
     if (file) {
       setImageFile(file);
-
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
     }
   };
 
-  // Submit handler (Both create & update)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.title || !formData.content) {
-      toastError("Title and content are required!");
+    if (!formData.title || !formData.content.intro) {
+      toastError("Title and Intro are required!");
       return;
     }
 
@@ -702,18 +846,15 @@ const BlogForm = ({ onNavigate, onSubmit, blogId, title }) => {
     try {
       const fd = new FormData();
       fd.append("title", formData.title.trim());
-      fd.append("content", formData.content.trim());
+      fd.append("content", JSON.stringify(formData.content)); // SEND AS JSON STRING
       fd.append("slug", formData.slug);
       fd.append("category", formData.category.trim());
+      fd.append("description", formData.description.trim());
+      fd.append("author", formData.author.trim());
+      fd.append("read_time", formData.read_time.trim());
 
       if (imageFile) {
-        fd.append("image", imageFile); // New image
-      }
-
-      // Debug Log
-      console.log("FormData being sent:");
-      for (let [key, value] of fd.entries()) {
-        console.log(key, value);
+        fd.append("image", imageFile);
       }
 
       await onSubmit(blogId, fd);
@@ -723,6 +864,32 @@ const BlogForm = ({ onNavigate, onSubmit, blogId, title }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: "16px 20px",
+    borderRadius: "12px",
+    border: "1px solid #e2e8f0",
+    fontSize: "15px",
+    outline: "none",
+    transition: "border-color 0.2s",
+  };
+
+  const labelStyle = {
+    display: "block",
+    fontSize: "15px",
+    fontWeight: 600,
+    marginBottom: "10px",
+    color: "#1e293b",
+  };
+
+  const cardStyle = {
+    background: "#f8fafc",
+    padding: "24px",
+    borderRadius: "16px",
+    border: "1px solid #e2e8f0",
+    marginBottom: "24px",
   };
 
   return (
@@ -765,103 +932,94 @@ const BlogForm = ({ onNavigate, onSubmit, blogId, title }) => {
         </h1>
 
         <form onSubmit={handleSubmit}>
-          {/* Title */}
-          <div style={{ marginBottom: "24px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "15px",
-                fontWeight: 600,
-                marginBottom: "10px",
-              }}
-            >
-              Blog Title *
-            </label>
+          {/* Basic Info */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "24px",
+              marginBottom: "24px",
+            }}
+          >
+            <div>
+              <label style={labelStyle}>Blog Title *</label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                placeholder="Enter blog title..."
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Slug</label>
+              <input
+                type="text"
+                name="slug"
+                value={formData.slug}
+                onChange={handleInputChange}
+                placeholder="Auto-generated from title"
+                style={inputStyle}
+              />
+            </div>
+          </div>
 
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gap: "24px",
+              marginBottom: "24px",
+            }}
+          >
+            <div>
+              <label style={labelStyle}>Category</label>
+              <input
+                type="text"
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                placeholder="e.g. Health Benefits"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Author</label>
+              <input
+                type="text"
+                name="author"
+                value={formData.author}
+                onChange={handleInputChange}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Read Time</label>
+              <input
+                type="text"
+                name="read_time"
+                value={formData.read_time}
+                onChange={handleInputChange}
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          <div style={{ marginBottom: "24px" }}>
+            <label style={labelStyle}>Short Description</label>
+            <textarea
+              name="description"
+              value={formData.description}
               onChange={handleInputChange}
-              placeholder="Enter your blog title..."
-              style={{
-                width: "100%",
-                padding: "16px 20px",
-                borderRadius: "12px",
-                border: "1px solid #e2e8f0",
-              }}
+              rows={3}
+              placeholder="Short summary for listing page..."
+              style={inputStyle}
             />
           </div>
 
-          {/* Slug */}
-          <div style={{ marginBottom: "24px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "15px",
-                fontWeight: 600,
-                marginBottom: "10px",
-              }}
-            >
-              Slug
-            </label>
-
-            <input
-              type="text"
-              name="slug"
-              value={formData.slug}
-              onChange={handleInputChange}
-              placeholder="Auto-generated from title"
-              style={{
-                width: "100%",
-                padding: "16px 20px",
-                borderRadius: "12px",
-                border: "1px solid #e2e8f0",
-              }}
-            />
-          </div>
-
-          {/* Category */}
-          <div style={{ marginBottom: "24px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "15px",
-                fontWeight: 600,
-                marginBottom: "10px",
-              }}
-            >
-              Category
-            </label>
-
-            <input
-              type="text"
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              placeholder="e.g. Technology, Programming"
-              style={{
-                width: "100%",
-                padding: "16px 20px",
-                borderRadius: "12px",
-                border: "1px solid #e2e8f0",
-              }}
-            />
-          </div>
-
-          {/* Image */}
-          <div style={{ marginBottom: "24px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "15px",
-                fontWeight: 600,
-                marginBottom: "10px",
-              }}
-            >
-              Featured Image
-            </label>
-
+          <div style={{ marginBottom: "32px" }}>
+            <label style={labelStyle}>Featured Image</label>
             <input
               type="file"
               accept="image/*"
@@ -874,7 +1032,6 @@ const BlogForm = ({ onNavigate, onSubmit, blogId, title }) => {
                 background: "#f8fafc",
               }}
             />
-
             {imagePreview && (
               <img
                 src={imagePreview}
@@ -890,54 +1047,287 @@ const BlogForm = ({ onNavigate, onSubmit, blogId, title }) => {
             )}
           </div>
 
-          {/* Content */}
-          <div style={{ marginBottom: "32px" }}>
-            <label
+          {/* Structured Content Sections */}
+          <div
+            style={{
+              marginTop: "40px",
+              borderTop: "1px solid #e2e8f0",
+              paddingTop: "32px",
+            }}
+          >
+            <h2
               style={{
-                display: "block",
-                fontSize: "15px",
-                fontWeight: 600,
-                marginBottom: "10px",
+                fontSize: "24px",
+                fontWeight: 700,
+                marginBottom: "24px",
+                color: "#1e293b",
               }}
             >
-              Content *
-            </label>
+              Blog Content Structure
+            </h2>
 
-            <textarea
-              name="content"
-              value={formData.content}
-              onChange={handleInputChange}
-              rows={12}
-              placeholder="Write blog content..."
-              style={{
-                width: "100%",
-                padding: "20px",
-                borderRadius: "12px",
-                border: "1px solid #e2e8f0",
-                lineHeight: 1.6,
-              }}
-            />
+            {/* Intro */}
+            <div style={{ marginBottom: "32px" }}>
+              <label style={labelStyle}>Intro Text *</label>
+              <textarea
+                value={formData.content.intro}
+                onChange={(e) => handleContentChange("intro", e.target.value)}
+                rows={4}
+                placeholder="The opening paragraph of your blog..."
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Sections */}
+            <div style={{ marginBottom: "32px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "between",
+                  alignItems: "center",
+                  marginBottom: "20px",
+                }}
+              >
+                <label style={{ ...labelStyle, marginBottom: 0 }}>
+                  Content Sections
+                </label>
+                <button
+                  type="button"
+                  onClick={addSection}
+                  style={{
+                    marginLeft: "auto",
+                    padding: "8px 16px",
+                    background: "#10b981",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  <Plus size={16} /> Add Section
+                </button>
+              </div>
+
+              {formData.content.sections.map((section, sIndex) => (
+                <div key={sIndex} style={cardStyle}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "between",
+                      marginBottom: "16px",
+                    }}
+                  >
+                    <h4 style={{ margin: 0, color: "#475569" }}>
+                      Section {sIndex + 1}
+                    </h4>
+                    {formData.content.sections.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeSection(sIndex)}
+                        style={{
+                          marginLeft: "auto",
+                          color: "#ef4444",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ marginBottom: "16px" }}>
+                    <input
+                      type="text"
+                      placeholder="Section Title"
+                      value={section.title}
+                      onChange={(e) =>
+                        handleSectionChange(sIndex, "title", e.target.value)
+                      }
+                      style={{ ...inputStyle, padding: "12px 16px" }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: "16px" }}>
+                    <textarea
+                      placeholder="Section Text"
+                      value={section.text}
+                      onChange={(e) =>
+                        handleSectionChange(sIndex, "text", e.target.value)
+                      }
+                      rows={3}
+                      style={{ ...inputStyle, padding: "12px 16px" }}
+                    />
+                  </div>
+
+                  {/* Benefits */}
+                  <div>
+                    <label
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#64748b",
+                        display: "block",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      Bullet Points / Benefits
+                    </label>
+                    {section.benefits.map((benefit, bIndex) => (
+                      <div
+                        key={bIndex}
+                        style={{
+                          display: "flex",
+                          gap: "10px",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        <input
+                          type="text"
+                          value={benefit}
+                          onChange={(e) =>
+                            handleBenefitChange(sIndex, bIndex, e.target.value)
+                          }
+                          placeholder="Add benefit..."
+                          style={{ ...inputStyle, padding: "10px 14px" }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeBenefit(sIndex, bIndex)}
+                          style={{
+                            color: "#94a3b8",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => addBenefit(sIndex)}
+                      style={{
+                        padding: "6px 12px",
+                        background: "#f1f5f9",
+                        color: "#475569",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                      }}
+                    >
+                      + Add Point
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Key Takeaways */}
+            <div style={{ marginBottom: "40px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: "20px",
+                }}
+              >
+                <label style={{ ...labelStyle, marginBottom: 0 }}>
+                  Key Takeaways
+                </label>
+                <button
+                  type="button"
+                  onClick={addTakeaway}
+                  style={{
+                    marginLeft: "auto",
+                    padding: "8px 16px",
+                    background: "#3b82f6",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                  }}
+                >
+                  + Add Takeaway
+                </button>
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "16px",
+                }}
+              >
+                {formData.content.keyTakeaways.map((takeaway, tIndex) => (
+                  <div
+                    key={tIndex}
+                    style={{
+                      display: "flex",
+                      gap: "10px",
+                      alignItems: "center",
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={takeaway}
+                      onChange={(e) =>
+                        handleTakeawayChange(tIndex, e.target.value)
+                      }
+                      placeholder="Key takeaway point..."
+                      style={{ ...inputStyle, padding: "12px 16px" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeTakeaway(tIndex)}
+                      style={{
+                        color: "#ef4444",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
             style={{
-              background: "linear-gradient(135deg, #e07a5f 0%, #e07a5f 100%)",
+              background: "linear-gradient(135deg, #e07a5f 0%, #c96745 100%)",
               color: "white",
               border: "none",
               borderRadius: "12px",
               padding: "18px 40px",
               cursor: loading ? "not-allowed" : "pointer",
-              fontWeight: 600,
+              fontWeight: 700,
+              fontSize: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px",
+              width: "100%",
+              boxShadow: "0 10px 25px rgba(224, 122, 95, 0.3)",
             }}
           >
-            <Save size={20} />
+            <Save size={22} />
             {loading
-              ? "Processing..."
+              ? "Publishing..."
               : blogId
-              ? "Update Blog"
-              : "Publish Blog"}
+                ? "Update published blog"
+                : "Publish Blog Now"}
           </button>
         </form>
       </div>
@@ -954,8 +1344,19 @@ const BlogView = ({ onNavigate, slug }) => {
 
   const fetchBlog = async () => {
     try {
-      const res = await getData(`/blogs/single/${slug}`);
-      setBlog(res.blog);
+      const res = await getData(`admin/blogs/single/${slug}`);
+
+      // Ensure content is parsed
+      let content = res.blog?.content;
+      if (typeof content === "string") {
+        try {
+          content = JSON.parse(content);
+        } catch (e) {
+          content = { intro: content, sections: [], keyTakeaways: [] };
+        }
+      }
+
+      setBlog({ ...res.blog, content });
     } catch (err) {
       console.log(err);
       toastError("Failed to load blog");
@@ -966,7 +1367,6 @@ const BlogView = ({ onNavigate, slug }) => {
 
   return (
     <div style={{ overflow: "hidden" }}>
-      {/* BACK BUTTON */}
       <button
         onClick={() => onNavigate("list")}
         style={{
@@ -985,30 +1385,32 @@ const BlogView = ({ onNavigate, slug }) => {
         <ArrowLeft size={20} /> Back to Blogs
       </button>
 
-      {/* HERO SECTION */}
+      {/* HERO */}
       <div
         style={{
-          height: "400px",
-          background: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.3)), url(${blog.image_url}) center/cover`,
+          height: "450px",
+          background: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.4)), url(${blog.image_url}) center/cover`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           color: "white",
           textAlign: "center",
           padding: "0 40px",
+          borderRadius: "24px",
+          marginBottom: "40px",
         }}
       >
         <div>
           {blog.category && (
             <div
               style={{
-                background: "rgba(255,255,255,0.2)",
-                padding: "8px 20px",
+                background: "#e07a5f",
+                padding: "8px 24px",
                 borderRadius: "30px",
                 display: "inline-block",
                 marginBottom: "24px",
                 fontSize: "14px",
-                backdropFilter: "blur(10px)",
+                fontWeight: 600,
               }}
             >
               {blog.category}
@@ -1017,89 +1419,181 @@ const BlogView = ({ onNavigate, slug }) => {
 
           <h1
             style={{
-              fontSize: "48px",
-              fontWeight: 700,
-              marginBottom: "20px",
+              fontSize: "56px",
+              fontWeight: 800,
+              marginBottom: "24px",
               maxWidth: 900,
+              lineHeight: 1.1,
             }}
           >
             {blog.title}
           </h1>
 
-          <p style={{ fontSize: "18px", opacity: 0.95 }}>
-            Published on{" "}
-            {new Date(blog.created_at).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "24px",
+              fontSize: "16px",
+              opacity: 0.9,
+              fontWeight: 500,
+            }}
+          >
+            <span>{blog.author}</span>
+            <span>•</span>
+            <span>{blog.read_time}</span>
+          </div>
         </div>
       </div>
 
-      {/* CONTENT SECTION */}
-      <div
-        style={{
-          // maxWidth: 900,
-          margin: "-80px auto 0",
-          padding: "0 40px 60px",
-        }}
-      >
-        <div
-          style={{
-            background: "white",
-            borderRadius: "24px",
-            padding: "80px 60px 60px",
-            boxShadow: "0 25px 50px rgba(0,0,0,0.1)",
-            marginBottom: "40px",
-          }}
-        >
-          <div
-            style={{ fontSize: "18px", lineHeight: 1.8, color: "#374151" }}
-            dangerouslySetInnerHTML={{ __html: blog.content }}
-          />
+      {/* CONTENT */}
+      <div style={{ maxWidth: "800px", margin: "0 auto", padding: "0 20px" }}>
+        <div style={{ marginBottom: "50px" }}>
+          <p
+            style={{
+              fontSize: "22px",
+              lineHeight: 1.7,
+              color: "#334155",
+              fontWeight: 500,
+              marginBottom: "40px",
+            }}
+          >
+            {blog.content?.intro}
+          </p>
+
+          {/* Dynamic Sections */}
+          {blog.content?.sections?.map((section, idx) => (
+            <div key={idx} style={{ marginBottom: "48px" }}>
+              {section.title && (
+                <h2
+                  style={{
+                    fontSize: "30px",
+                    fontWeight: 700,
+                    marginBottom: "20px",
+                    color: "#1e293b",
+                  }}
+                >
+                  {section.title}
+                </h2>
+              )}
+              {section.text && (
+                <p
+                  style={{
+                    fontSize: "18px",
+                    lineHeight: 1.8,
+                    color: "#475569",
+                    marginBottom: "24px",
+                  }}
+                >
+                  {section.text}
+                </p>
+              )}
+
+              {section.benefits?.length > 0 && section.benefits[0] !== "" && (
+                <ul
+                  style={{
+                    paddingLeft: "24px",
+                    fontSize: "18px",
+                    lineHeight: 2,
+                    color: "#475569",
+                  }}
+                >
+                  {section.benefits.map((benefit, bIdx) => (
+                    <li key={bIdx} style={{ marginBottom: "12px" }}>
+                      {benefit}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+
+          {/* Key Takeaways Card */}
+          {blog.content?.keyTakeaways?.length > 0 &&
+            blog.content?.keyTakeaways[0] !== "" && (
+              <div
+                style={{
+                  background: "#f8fafc",
+                  borderLeft: "6px solid #e07a5f",
+                  padding: "40px",
+                  borderRadius: "16px",
+                  marginTop: "60px",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: 700,
+                    marginBottom: "20px",
+                    color: "#1e293b",
+                  }}
+                >
+                  Key Takeaways
+                </h3>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "16px",
+                  }}
+                >
+                  {blog.content.keyTakeaways.map((item, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: "flex",
+                        alignItems: "start",
+                        gap: "12px",
+                        fontSize: "17px",
+                        color: "#475569",
+                      }}
+                    >
+                      <span style={{ color: "#e07a5f", fontWeight: "bold" }}>
+                        ✓
+                      </span>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
         </div>
 
-        {/* ACTION BUTTONS */}
-        <div style={{ display: "flex", gap: "16px", justifyContent: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "16px",
+            justifyContent: "center",
+            paddingBottom: "60px",
+          }}
+        >
           <button
             onClick={() => onNavigate("edit", blog.id)}
             style={{
-              background: "#f59e0b",
+              padding: "14px 32px",
+              background: "#e07a5f",
               color: "white",
               border: "none",
               borderRadius: "12px",
-              padding: "14px 28px",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
+              fontWeight: 700,
               cursor: "pointer",
-              fontSize: "15px",
-              fontWeight: 600,
             }}
           >
-            <Edit size={18} />
-            Edit Blog
+            Edit Post
           </button>
-
           <button
             onClick={() => onNavigate("list")}
             style={{
-              background: "white",
-              border: "1px solid #e2e8f0",
+              padding: "14px 32px",
+              background: "#f1f5f9",
+              color: "#475569",
+              border: "none",
               borderRadius: "12px",
-              padding: "14px 28px",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
+              fontWeight: 600,
               cursor: "pointer",
-              fontSize: "15px",
-              fontWeight: 500,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
             }}
           >
-            <ArrowLeft size={18} />
-            Back to Blogs
+            Back to List
           </button>
         </div>
       </div>
