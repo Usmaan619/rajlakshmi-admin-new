@@ -73,20 +73,39 @@ const WeightTagInput = ({ weights, setWeights }) => {
         {weights.map((w, i) => (
           <span
             key={i}
-            className="badge rounded-pill px-3 py-2"
+            className="badge rounded-pill px-3 py-2 d-inline-flex align-items-center"
             style={{
-              background: "#ede7f6",
-              color: "#6c3dbf",
-              fontSize: 13,
+              background: "#f3f0ff",
+              color: "#6d28d9",
+              fontSize: "13px",
               fontWeight: 600,
+              border: "1px solid #ddd6fe",
             }}
           >
             {w}
-            <i
-              className="bi bi-x ms-2"
-              style={{ cursor: "pointer" }}
+            <span
+              className="ms-2 d-flex align-items-center justify-content-center"
+              style={{
+                cursor: "pointer",
+                width: "18px",
+                height: "18px",
+                borderRadius: "50%",
+                background: "rgba(109, 40, 217, 0.1)",
+                transition: "all 0.2s",
+              }}
               onClick={() => removeWeight(i)}
-            ></i>
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = "#fee2e2";
+                e.currentTarget.style.color = "#ef4444";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = "rgba(109, 40, 217, 0.1)";
+                e.currentTarget.style.color = "inherit";
+              }}
+              title="Remove variant"
+            >
+              <i className="bi bi-x" style={{ fontSize: "16px" }}></i>
+            </span>
           </span>
         ))}
         {weights.length === 0 && (
@@ -226,6 +245,12 @@ const ProductInfo = () => {
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   /* ── Add Modal ─────────────────────────────────────────────────────────── */
   const [showAdd, setShowAdd] = useState(false);
@@ -264,7 +289,12 @@ const ProductInfo = () => {
       category_name: "",
       category_id: "",
       is_featured: false,
+      best_saller: false,
       is_active: true,
+      short_description: "",
+      full_description: "",
+      health_benefits: "",
+      ingredients: "",
     },
   });
 
@@ -279,15 +309,48 @@ const ProductInfo = () => {
 
   /* ── fetch ────────────────────────────────────────────────────────────── */
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(1, searchTerm, selectedCategory);
     fetchCategories();
   }, []);
 
-  const fetchProducts = async () => {
+  // Fetch when category or page changes
+  useEffect(() => {
+    fetchProducts(currentPage, searchTerm, selectedCategory);
+  }, [selectedCategory, currentPage]);
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage === 1) fetchProducts(1, searchTerm, selectedCategory);
+      else setCurrentPage(1); // Changing search resets to page 1
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchProducts = async (page = 1, search = "", cat = "") => {
     setLoading(true);
     try {
-      const res = await getData("products/get_all_products");
-      if (res?.success) setProducts(res.products || []);
+      let url = "products/get_all_products";
+      const params = [];
+      params.push(`page=${page}`);
+      params.push(`limit=${limit}`);
+      if (search) params.push(`search=${encodeURIComponent(search)}`);
+      if (cat) params.push(`category=${encodeURIComponent(cat)}`);
+
+      if (params.length > 0) url += `?${params.join("&")}`;
+
+      const res = await getData(url);
+      if (res?.success) {
+        setProducts(res.products || []);
+        if (res.pagination) {
+          setTotalItems(res.pagination.totalItems);
+          setTotalPages(res.pagination.totalPages);
+          // Only update if different to avoid infinite loop
+          if (res.pagination.currentPage !== currentPage) {
+            // No direct update here to avoid effect triggering twice
+          }
+        }
+      }
     } catch (e) {
       console.log("Fetch error:", e);
     } finally {
@@ -333,7 +396,12 @@ const ProductInfo = () => {
       category_name: p.category_name,
       category_id: p.category_id ?? "",
       is_featured: !!p.is_featured,
+      best_saller: !!p.best_saller,
       is_active: !!p.is_active,
+      short_description: p.short_description || "",
+      full_description: p.full_description || "",
+      health_benefits: p.health_benefits || "",
+      ingredients: p.ingredients || "",
     });
     setShowEdit(true);
   };
@@ -429,7 +497,8 @@ const ProductInfo = () => {
     try {
       const fd = new FormData();
       Object.entries(data).forEach(([k, v]) => {
-        if (k === "is_featured" || k === "is_active") fd.append(k, v ? 1 : 0);
+        if (k === "is_featured" || k === "is_active" || k === "best_saller")
+          fd.append(k, v ? 1 : 0);
         else fd.append(k, v ?? "");
       });
       fd.append("product_weight", JSON.stringify(addWeights));
@@ -468,7 +537,12 @@ const ProductInfo = () => {
         category_name: data.category_name,
         category_id: data.category_id,
         is_featured: data.is_featured ? 1 : 0,
+        best_saller: data.best_saller ? 1 : 0,
         is_active: data.is_active ? 1 : 0,
+        short_description: data.short_description,
+        full_description: data.full_description,
+        health_benefits: data.health_benefits,
+        ingredients: data.ingredients,
         // NOTE: product_images intentionally NOT included here.
         // Base64 image strings are too large for JSON PUT body (~750KB+ for 3 images).
         // Images are managed exclusively via /replace-image and /add-images endpoints.
@@ -501,58 +575,93 @@ const ProductInfo = () => {
           <Navbar />
 
           <div style={{ padding: "24px 28px" }}>
-            {/* ── Header ──────────────────────────────────────────────── */}
-            <div
-              className="d-flex justify-content-between align-items-center mb-4 flex-wrap"
-              style={{ gap: "12px" }}
-            >
+            {/* Dashboard Header */}
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
               <div>
-                <h1 className="page-title">Product Management</h1>
-                <p className="page-subtitle">Manage your product catalogue</p>
+                <h3 className="fw-bold mb-1" style={{ color: "#1e293b" }}>
+                  Product Inventory
+                </h3>
+                <p className="text-muted small mb-0">
+                  Manage your store products, pricing, and stock levels
+                </p>
               </div>
-              <div className="d-flex gap-2 flex-wrap">
+              <div className="d-flex gap-2">
                 <button
-                  className="btn px-4"
+                  className="btn shadow-sm d-flex align-items-center gap-2"
                   style={{
-                    background: "linear-gradient(135deg, #f59e0b, #d97706)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "10px",
+                    borderRadius: 12,
+                    padding: "10px 20px",
+                    background: "#fff",
+                    border: "1px solid #e2e8f0",
                     fontWeight: 600,
                     fontSize: "13px",
-                    boxShadow: "0 2px 8px rgba(245, 158, 11, 0.3)",
-                    padding: "9px 18px",
                   }}
-                  onClick={() => {
-                    setEditCat(null);
-                    setCatForm({ name: "", description: "" });
-                    setDeleteCatTarget(null);
-                    setShowCatModal(true);
-                  }}
+                  onClick={() => setShowCatModal(true)}
                 >
-                  <i className="bi bi-tags me-2" />
-                  Manage Categories
+                  <i className="bi bi-grid-3x3-gap"></i>
+                  <span>Manage Categories</span>
                 </button>
                 <button
-                  className="btn px-4"
+                  className="btn btn-primary d-flex align-items-center gap-2 shadow-sm border-0"
                   style={{
-                    background: "linear-gradient(135deg, #e07a5f, #c96745)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "10px",
+                    borderRadius: 12,
+                    padding: "10px 24px",
+                    background: "linear-gradient(135deg,#6366f1,#4f46e5)",
                     fontWeight: 600,
                     fontSize: "13px",
-                    boxShadow: "0 2px 8px rgba(224, 122, 95, 0.3)",
-                    padding: "9px 18px",
                   }}
-                  onClick={() => {
-                    setAddWeights([]);
-                    setShowAdd(true);
+                  onClick={() => setShowAdd(true)}
+                >
+                  <i className="bi bi-plus-lg"></i>
+                  <span>Add Product</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Dashboard Controls: Search & Category Filter */}
+            <div className="row g-3 mb-4">
+              <div className="col-12 col-md-8 col-lg-6">
+                <div role="search" className="position-relative">
+                  <i
+                    className="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"
+                    style={{ zIndex: 5 }}
+                  ></i>
+                  <input
+                    type="text"
+                    className="form-control ps-5 border shadow-sm"
+                    placeholder="Search by product name..."
+                    style={{
+                      height: 48,
+                      borderRadius: 12,
+                      borderColor: "#e2e8f0",
+                    }}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="col-12 col-md-4 col-lg-3">
+                <select
+                  className="form-select border shadow-sm"
+                  style={{
+                    borderRadius: 12,
+                    height: 48,
+                    borderColor: "#e2e8f0",
+                  }}
+                  value={selectedCategory}
+                  onChange={(e) => {
+                    setSelectedCategory(e.target.value);
+                    setCurrentPage(1);
                   }}
                 >
-                  <i className="bi bi-plus-circle me-2" />
-                  Add Product
-                </button>
+                  <option value="">All Categories</option>
+                  {categories.map((c, i) => (
+                    <option key={i} value={c.category_name || c.name}>
+                      {c.category_name || c.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -596,284 +705,398 @@ const ProductInfo = () => {
                   </p>
                 </div>
               ) : (
-                <div className="table-responsive" style={{ minHeight: "auto" }}>
-                  <table className="table table-hover align-middle mb-0">
-                    <thead>
-                      <tr
-                        style={{
-                          background:
-                            "linear-gradient(135deg, #1e293b, #334155)",
-                          color: "#fff",
-                        }}
-                      >
-                        <th
-                          className="py-3 ps-4"
-                          style={{
-                            width: 50,
-                            fontWeight: 600,
-                            fontSize: "12px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                            border: "none",
-                          }}
-                        >
-                          #
-                        </th>
-                        <th
-                          style={{
-                            fontWeight: 600,
-                            fontSize: "12px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                            border: "none",
-                          }}
-                        >
-                          Product Name
-                        </th>
-                        <th
-                          style={{
-                            fontWeight: 600,
-                            fontSize: "12px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                            border: "none",
-                          }}
-                        >
-                          Category
-                        </th>
-                        <th
-                          style={{
-                            fontWeight: 600,
-                            fontSize: "12px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                            border: "none",
-                          }}
-                        >
-                          Weights
-                        </th>
-                        <th
-                          style={{
-                            fontWeight: 600,
-                            fontSize: "12px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                            border: "none",
-                          }}
-                        >
-                          Purchase ₹
-                        </th>
-                        <th
-                          style={{
-                            fontWeight: 600,
-                            fontSize: "12px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                            border: "none",
-                          }}
-                        >
-                          Selling ₹
-                        </th>
-                        <th
-                          style={{
-                            fontWeight: 600,
-                            fontSize: "12px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                            border: "none",
-                          }}
-                        >
-                          MRP ₹
-                        </th>
-                        <th
-                          style={{
-                            fontWeight: 600,
-                            fontSize: "12px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                            border: "none",
-                          }}
-                        >
-                          Stock
-                        </th>
-                        <th
-                          className="text-center"
-                          style={{
-                            fontWeight: 600,
-                            fontSize: "12px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                            border: "none",
-                          }}
-                        >
-                          Status
-                        </th>
-                        <th
-                          className="text-center pe-4"
-                          style={{
-                            fontWeight: 600,
-                            fontSize: "12px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                            border: "none",
-                          }}
-                        >
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {products.map((p, i) => (
+                <>
+                  <div
+                    className="table-responsive"
+                    style={{ minHeight: "auto" }}
+                  >
+                    <table className="table table-hover align-middle mb-0">
+                      <thead>
                         <tr
-                          key={p.id}
-                          style={{ borderBottom: "1px solid #f1f5f9" }}
+                          style={{
+                            background:
+                              "linear-gradient(135deg, #1e293b, #334155)",
+                            color: "#fff",
+                          }}
                         >
-                          <td
-                            className="ps-4"
-                            style={{ color: "#94a3b8", fontSize: "13px" }}
+                          <th
+                            className="py-3 ps-4"
+                            style={{
+                              width: 50,
+                              fontWeight: 600,
+                              fontSize: "12px",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              border: "none",
+                            }}
                           >
-                            {i + 1}
-                          </td>
-                          <td
+                            #
+                          </th>
+                          <th
                             style={{
                               fontWeight: 600,
-                              color: "#0f172a",
-                              fontSize: "13px",
+                              fontSize: "12px",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              border: "none",
                             }}
                           >
-                            {p.product_name}
-                          </td>
-                          <td>
-                            <span
+                            Product Name
+                          </th>
+                          <th
+                            style={{
+                              fontWeight: 600,
+                              fontSize: "12px",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              border: "none",
+                            }}
+                          >
+                            Category
+                          </th>
+                          <th
+                            style={{
+                              fontWeight: 600,
+                              fontSize: "12px",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              border: "none",
+                            }}
+                          >
+                            Weights
+                          </th>
+                          <th
+                            style={{
+                              fontWeight: 600,
+                              fontSize: "12px",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              border: "none",
+                            }}
+                          >
+                            Purchase ₹
+                          </th>
+                          <th
+                            style={{
+                              fontWeight: 600,
+                              fontSize: "12px",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              border: "none",
+                            }}
+                          >
+                            Selling ₹
+                          </th>
+                          <th
+                            style={{
+                              fontWeight: 600,
+                              fontSize: "12px",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              border: "none",
+                            }}
+                          >
+                            MRP ₹
+                          </th>
+                          <th
+                            style={{
+                              fontWeight: 600,
+                              fontSize: "12px",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              border: "none",
+                            }}
+                          >
+                            Stock
+                          </th>
+                          <th
+                            className="text-center"
+                            style={{
+                              fontWeight: 600,
+                              fontSize: "12px",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              border: "none",
+                            }}
+                          >
+                            Status
+                          </th>
+                          <th
+                            className="text-center pe-4"
+                            style={{
+                              fontWeight: 600,
+                              fontSize: "12px",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              border: "none",
+                            }}
+                          >
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {products.map((p, i) => (
+                          <tr
+                            key={p.id}
+                            style={{ borderBottom: "1px solid #f1f5f9" }}
+                          >
+                            <td
+                              className="ps-4"
+                              style={{ color: "#94a3b8", fontSize: "13px" }}
+                            >
+                              {i + 1}
+                            </td>
+                            <td
                               style={{
-                                background: "rgba(124, 58, 237, 0.1)",
-                                color: "#7c3aed",
-                                fontSize: "11px",
                                 fontWeight: 600,
-                                padding: "4px 10px",
-                                borderRadius: "20px",
-                                whiteSpace: "nowrap",
+                                color: "#0f172a",
+                                fontSize: "13px",
                               }}
                             >
-                              {p.category_name}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="d-flex flex-wrap gap-1">
-                              {parseWeight(p.product_weight).map((w, wi) => (
-                                <span
-                                  key={wi}
+                              {p.product_name}
+                            </td>
+                            <td>
+                              <span
+                                style={{
+                                  background: "rgba(124, 58, 237, 0.1)",
+                                  color: "#7c3aed",
+                                  fontSize: "11px",
+                                  fontWeight: 600,
+                                  padding: "4px 10px",
+                                  borderRadius: "20px",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {p.category_name}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="d-flex flex-wrap gap-1">
+                                {parseWeight(p.product_weight).map((w, wi) => (
+                                  <span
+                                    key={wi}
+                                    style={{
+                                      background: "#f1f5f9",
+                                      color: "#475569",
+                                      fontSize: "11px",
+                                      fontWeight: 500,
+                                      padding: "3px 8px",
+                                      borderRadius: "6px",
+                                      border: "1px solid #e2e8f0",
+                                    }}
+                                  >
+                                    {w}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td style={{ color: "#64748b", fontSize: "13px" }}>
+                              ₹{p.product_purchase_price}
+                            </td>
+                            <td
+                              style={{
+                                fontWeight: 700,
+                                color: "#059669",
+                                fontSize: "13px",
+                              }}
+                            >
+                              ₹{p.product_price}
+                            </td>
+                            <td
+                              style={{
+                                textDecoration: "line-through",
+                                color: "#94a3b8",
+                                fontSize: "13px",
+                              }}
+                            >
+                              ₹{p.product_del_price}
+                            </td>
+                            <td>
+                              <span
+                                style={{
+                                  background:
+                                    p.product_stock > 0
+                                      ? "rgba(16, 185, 129, 0.1)"
+                                      : "rgba(239, 68, 68, 0.1)",
+                                  color:
+                                    p.product_stock > 0 ? "#059669" : "#dc2626",
+                                  fontSize: "11px",
+                                  fontWeight: 600,
+                                  padding: "4px 10px",
+                                  borderRadius: "20px",
+                                }}
+                              >
+                                {p.product_stock ?? 0}
+                              </span>
+                            </td>
+                            <td className="text-center">
+                              <span
+                                style={{
+                                  background: p.is_active
+                                    ? "rgba(16, 185, 129, 0.1)"
+                                    : "rgba(100, 116, 139, 0.1)",
+                                  color: p.is_active ? "#059669" : "#64748b",
+                                  fontSize: "11px",
+                                  fontWeight: 600,
+                                  padding: "4px 10px",
+                                  borderRadius: "20px",
+                                }}
+                              >
+                                {p.is_active ? "Active" : "Inactive"}
+                              </span>
+                            </td>
+                            <td className="text-center pe-4">
+                              <div className="d-flex gap-2 justify-content-center">
+                                <button
+                                  className="btn btn-sm px-3"
                                   style={{
-                                    background: "#f1f5f9",
-                                    color: "#475569",
-                                    fontSize: "11px",
-                                    fontWeight: 500,
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    border: "1px solid #e2e8f0",
+                                    background: "rgba(79, 70, 229, 0.1)",
+                                    color: "#4f46e5",
+                                    border: "1px solid rgba(79, 70, 229, 0.2)",
+                                    borderRadius: "8px",
+                                    fontWeight: 600,
+                                    fontSize: "12px",
+                                    transition: "all 0.2s ease",
+                                  }}
+                                  onClick={() => openEdit(p)}
+                                >
+                                  <i className="bi bi-pencil-square me-1" />
+                                  Edit
+                                </button>
+                                <button
+                                  className="btn btn-sm px-3"
+                                  style={{
+                                    background: "rgba(239, 68, 68, 0.1)",
+                                    color: "#dc2626",
+                                    border: "1px solid rgba(239, 68, 68, 0.2)",
+                                    borderRadius: "8px",
+                                    fontWeight: 600,
+                                    fontSize: "12px",
+                                    transition: "all 0.2s ease",
+                                  }}
+                                  onClick={() => setDeleteTarget(p)}
+                                >
+                                  <i className="bi bi-trash3 me-1" />
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination Info & Controls */}
+                  <div
+                    className="px-4 py-3 d-flex flex-wrap align-items-center justify-content-between border-top"
+                    style={{ background: "#f8fafc" }}
+                  >
+                    <div className="text-muted small mb-2 mb-sm-0">
+                      Showing{" "}
+                      <b>
+                        {(currentPage - 1) * limit + 1} -{" "}
+                        {Math.min(currentPage * limit, totalItems)}
+                      </b>{" "}
+                      of <b>{totalItems}</b> products
+                    </div>
+
+                    {totalPages > 1 && (
+                      <nav aria-label="Page navigation">
+                        <ul className="pagination pagination-sm mb-0 gap-1">
+                          <li
+                            className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+                          >
+                            <button
+                              className="page-link border-0 shadow-sm rounded-3"
+                              onClick={() =>
+                                setCurrentPage((p) => Math.max(1, p - 1))
+                              }
+                              style={{
+                                width: 36,
+                                height: 36,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <i className="bi bi-chevron-left"></i>
+                            </button>
+                          </li>
+
+                          {[...Array(totalPages)].map((_, i) => {
+                            const pg = i + 1;
+                            if (
+                              totalPages > 7 &&
+                              pg !== 1 &&
+                              pg !== totalPages &&
+                              Math.abs(pg - currentPage) > 1
+                            ) {
+                              if (pg === 2 || pg === totalPages - 1)
+                                return (
+                                  <li key={pg} className="page-item disabled">
+                                    <span className="page-link border-0 bg-transparent">
+                                      ...
+                                    </span>
+                                  </li>
+                                );
+                              return null;
+                            }
+
+                            return (
+                              <li
+                                key={pg}
+                                className={`page-item ${currentPage === pg ? "active" : ""}`}
+                              >
+                                <button
+                                  className="page-link border-0 shadow-sm rounded-3 mx-1"
+                                  onClick={() => setCurrentPage(pg)}
+                                  style={{
+                                    width: 36,
+                                    height: 36,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    background:
+                                      currentPage === pg ? "#6366f1" : "#fff",
+                                    color:
+                                      currentPage === pg ? "#fff" : "#1e293b",
+                                    fontWeight: 600,
                                   }}
                                 >
-                                  {w}
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-                          <td style={{ color: "#64748b", fontSize: "13px" }}>
-                            ₹{p.product_purchase_price}
-                          </td>
-                          <td
-                            style={{
-                              fontWeight: 700,
-                              color: "#059669",
-                              fontSize: "13px",
-                            }}
+                                  {pg}
+                                </button>
+                              </li>
+                            );
+                          })}
+
+                          <li
+                            className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}
                           >
-                            ₹{p.product_price}
-                          </td>
-                          <td
-                            style={{
-                              textDecoration: "line-through",
-                              color: "#94a3b8",
-                              fontSize: "13px",
-                            }}
-                          >
-                            ₹{p.product_del_price}
-                          </td>
-                          <td>
-                            <span
+                            <button
+                              className="page-link border-0 shadow-sm rounded-3"
+                              onClick={() =>
+                                setCurrentPage((p) =>
+                                  Math.min(totalPages, p + 1),
+                                )
+                              }
                               style={{
-                                background:
-                                  p.product_stock > 0
-                                    ? "rgba(16, 185, 129, 0.1)"
-                                    : "rgba(239, 68, 68, 0.1)",
-                                color:
-                                  p.product_stock > 0 ? "#059669" : "#dc2626",
-                                fontSize: "11px",
-                                fontWeight: 600,
-                                padding: "4px 10px",
-                                borderRadius: "20px",
+                                width: 36,
+                                height: 36,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
                               }}
                             >
-                              {p.product_stock ?? 0}
-                            </span>
-                          </td>
-                          <td className="text-center">
-                            <span
-                              style={{
-                                background: p.is_active
-                                  ? "rgba(16, 185, 129, 0.1)"
-                                  : "rgba(100, 116, 139, 0.1)",
-                                color: p.is_active ? "#059669" : "#64748b",
-                                fontSize: "11px",
-                                fontWeight: 600,
-                                padding: "4px 10px",
-                                borderRadius: "20px",
-                              }}
-                            >
-                              {p.is_active ? "Active" : "Inactive"}
-                            </span>
-                          </td>
-                          <td className="text-center pe-4">
-                            <div className="d-flex gap-2 justify-content-center">
-                              <button
-                                className="btn btn-sm px-3"
-                                style={{
-                                  background: "rgba(79, 70, 229, 0.1)",
-                                  color: "#4f46e5",
-                                  border: "1px solid rgba(79, 70, 229, 0.2)",
-                                  borderRadius: "8px",
-                                  fontWeight: 600,
-                                  fontSize: "12px",
-                                  transition: "all 0.2s ease",
-                                }}
-                                onClick={() => openEdit(p)}
-                              >
-                                <i className="bi bi-pencil-square me-1" />
-                                Edit
-                              </button>
-                              <button
-                                className="btn btn-sm px-3"
-                                style={{
-                                  background: "rgba(239, 68, 68, 0.1)",
-                                  color: "#dc2626",
-                                  border: "1px solid rgba(239, 68, 68, 0.2)",
-                                  borderRadius: "8px",
-                                  fontWeight: 600,
-                                  fontSize: "12px",
-                                  transition: "all 0.2s ease",
-                                }}
-                                onClick={() => setDeleteTarget(p)}
-                              >
-                                <i className="bi bi-trash3 me-1" />
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                              <i className="bi bi-chevron-right"></i>
+                            </button>
+                          </li>
+                        </ul>
+                      </nav>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -1119,6 +1342,25 @@ const ProductInfo = () => {
                       </div>
                     </div>
                     <div className="col-md-3 d-flex align-items-end pb-1">
+                      <div
+                        className="form-check form-switch p-0"
+                        style={{ paddingLeft: "2.5em !important" }}
+                      >
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="add_best_saller"
+                          {...rAdd("best_saller")}
+                        />
+                        <label
+                          className="form-check-label fw-semibold small ms-2"
+                          htmlFor="add_best_saller"
+                        >
+                          Best Seller
+                        </label>
+                      </div>
+                    </div>
+                    <div className="col-md-3 d-flex align-items-end pb-1">
                       <div className="form-check form-switch">
                         <input
                           className="form-check-input"
@@ -1136,12 +1378,61 @@ const ProductInfo = () => {
                       </div>
                     </div>
 
+                    {/* Descriptions */}
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small">
+                        Short Description
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="2"
+                        placeholder="Brief overview of the product..."
+                        {...rAdd("short_description")}
+                      ></textarea>
+                    </div>
+
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small">
+                        Full Description
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="4"
+                        placeholder="Detailed product information..."
+                        {...rAdd("full_description")}
+                      ></textarea>
+                    </div>
+
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold small">
+                        Health Benefits
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="Enter benefits (one per line)..."
+                        {...rAdd("health_benefits")}
+                      ></textarea>
+                    </div>
+
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold small">
+                        Ingredients
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="List ingredients..."
+                        {...rAdd("ingredients")}
+                      ></textarea>
+                    </div>
+
                     {/* Images */}
                     <div className="col-12">
                       <label className="form-label fw-semibold small">
                         Product Images <span className="text-danger">*</span>{" "}
                         <span className="text-muted fw-normal">
-                          (Minimum 4)
+                          (At least 1)
                         </span>
                       </label>
                       <div
@@ -1161,17 +1452,17 @@ const ProductInfo = () => {
                         {addPreviews.length > 0 && (
                           <div className="d-flex flex-wrap gap-2 mt-2">
                             {addPreviews.map((src, i) => (
-                              <div key={i} style={{ width: 90 }}>
+                              <div key={i} style={{ width: 100 }}>
                                 <img
                                   src={src}
-                                  alt=""
+                                  className="img-thumbnail"
                                   style={{
-                                    width: 90,
-                                    height: 90,
+                                    width: "100%",
+                                    height: 120,
                                     objectFit: "cover",
-                                    borderRadius: 8,
-                                    border: "2px solid #dee2e6",
+                                    borderRadius: "8px",
                                   }}
+                                  alt={`Product thumbnail ${i + 1}`}
                                 />
                                 <button
                                   type="button"
@@ -1185,10 +1476,10 @@ const ProductInfo = () => {
                             ))}
                           </div>
                         )}
-                        {addImages.length > 0 && addImages.length < 4 && (
+                        {addImages.length === 0 && (
                           <div className="alert alert-warning mt-2 py-1 mb-0 small">
                             <i className="bi bi-exclamation-triangle me-1"></i>
-                            {4 - addImages.length} more image(s) needed
+                            Please add at least one image.
                           </div>
                         )}
                       </div>
@@ -1318,14 +1609,14 @@ const ProductInfo = () => {
                             <div key={imgIdx} style={{ width: 100 }}>
                               <img
                                 src={img}
-                                alt=""
+                                className="img-thumbnail"
                                 style={{
-                                  width: 100,
-                                  height: 100,
+                                  width: "100%",
+                                  height: 120,
                                   objectFit: "cover",
-                                  borderRadius: 10,
-                                  border: "2px solid #dee2e6",
+                                  borderRadius: "8px",
                                 }}
+                                alt={`Product thumbnail ${imgIdx + 1}`}
                               />
                               <label
                                 htmlFor={`replace-img-${imgIdx}`}
@@ -1596,6 +1887,22 @@ const ProductInfo = () => {
                         <input
                           className="form-check-input"
                           type="checkbox"
+                          id="edit_best_saller"
+                          {...rEdit("best_saller")}
+                        />
+                        <label
+                          className="form-check-label fw-semibold small"
+                          htmlFor="edit_best_saller"
+                        >
+                          Best Seller
+                        </label>
+                      </div>
+                    </div>
+                    <div className="col-md-3 d-flex align-items-end pb-1">
+                      <div className="form-check form-switch">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
                           id="edit_active"
                           {...rEdit("is_active")}
                         />
@@ -1606,6 +1913,55 @@ const ProductInfo = () => {
                           Active
                         </label>
                       </div>
+                    </div>
+
+                    {/* Descriptions */}
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small">
+                        Short Description
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="2"
+                        placeholder="Brief overview..."
+                        {...rEdit("short_description")}
+                      ></textarea>
+                    </div>
+
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small">
+                        Full Description
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="4"
+                        placeholder="Detailed info..."
+                        {...rEdit("full_description")}
+                      ></textarea>
+                    </div>
+
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold small">
+                        Health Benefits
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="Benefits..."
+                        {...rEdit("health_benefits")}
+                      ></textarea>
+                    </div>
+
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold small">
+                        Ingredients
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="Ingredients..."
+                        {...rEdit("ingredients")}
+                      ></textarea>
                     </div>
                   </div>
                 </form>
@@ -1783,13 +2139,18 @@ const ProductInfo = () => {
             if (e.target === e.currentTarget) {
               setShowCatModal(false);
               setEditCat(null);
-              setCatForm({ name: "", description: "" });
+              setCatForm({
+                category_name: "",
+                category_description: "",
+                is_featured: false,
+                is_active: true,
+              });
               setDeleteCatTarget(null);
             }
           }}
         >
           <div
-            style={{ width: "100%", maxWidth: 700 }}
+            style={{ width: "100%", maxWidth: 1200 }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
@@ -2015,40 +2376,44 @@ const ProductInfo = () => {
                 )}
 
                 {/* ── Category List ── */}
-                <div>
-                  <div className="d-flex justify-content-between align-items-center mb-2">
-                    <h6 className="fw-bold mb-0" style={{ color: "#555" }}>
-                      <i className="bi bi-list-ul me-2"></i>All Categories
+                <div className="mt-4">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h6 className="fw-bold mb-0" style={{ color: "#334155" }}>
+                      <i className="bi bi-list-ul me-2 text-primary"></i>All
+                      Categories
                     </h6>
-                    <small className="text-muted">
-                      {categories.length} total
-                    </small>
+                    <div className="d-flex align-items-center gap-3">
+                      <span className="badge bg-light text-dark border px-3 py-2 rounded-pill small">
+                        {categories.length} Total
+                      </span>
+                    </div>
                   </div>
 
                   {catLoading ? (
-                    <div className="text-center py-4">
-                      <span className="spinner-border text-warning" />
-                      <p className="text-muted mt-2 mb-0 small">
+                    <div className="text-center py-5 bg-light rounded-3">
+                      <span className="spinner-border text-primary" />
+                      <p className="text-muted mt-2 mb-0 small fw-medium">
                         Loading categories...
                       </p>
                     </div>
                   ) : categories.length === 0 ? (
-                    <div className="text-center py-4">
+                    <div className="text-center py-5 bg-light rounded-3 border border-dashed">
                       <i
-                        className="bi bi-folder2-open"
-                        style={{ fontSize: "2rem", color: "#ccc" }}
+                        className="bi bi-folder2-open d-block mb-2"
+                        style={{ fontSize: "2.5rem", color: "#cbd5e1" }}
                       ></i>
-                      <p className="text-muted mt-2 mb-0 small">
-                        No categories yet. Add one above.
+                      <p className="text-muted mb-0 small">
+                        No categories found. Start by adding one above.
                       </p>
                     </div>
                   ) : (
                     <div
-                      className="rounded-3 overflow-hidden"
+                      className="rounded-3 border"
                       style={{
-                        border: "1px solid #eee",
-                        maxHeight: 320,
+                        background: "#fff",
+                        maxHeight: 500,
                         overflowY: "auto",
+                        boxShadow: "inset 0 2px 4px rgba(0,0,0,0.02)",
                       }}
                     >
                       <table className="table table-hover align-middle mb-0">
@@ -2064,6 +2429,12 @@ const ProductInfo = () => {
                             <th className="py-2 small text-muted">Name</th>
                             <th className="py-2 small text-muted">
                               Description
+                            </th>
+                            <th className="py-2 small text-muted text-center">
+                              Featured
+                            </th>
+                            <th className="py-2 small text-muted text-center">
+                              Active
                             </th>
                             <th className="py-2 pe-3 small text-muted text-end">
                               Actions
@@ -2092,10 +2463,54 @@ const ProductInfo = () => {
                                   {cat.name || cat.category_name}
                                 </span>
                               </td>
-                              <td className="small text-muted">
+                              <td
+                                className="small text-muted"
+                                style={{
+                                  maxWidth: "180px",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
                                 {cat.category_description ||
                                   cat.description ||
                                   "—"}
+                              </td>
+                              <td className="text-center">
+                                {cat.is_featured == 1 ||
+                                cat.is_featured === true ? (
+                                  <span
+                                    className="badge bg-warning-subtle text-warning border px-2 py-1 rounded-pill"
+                                    style={{ fontSize: "10px" }}
+                                  >
+                                    Yes
+                                  </span>
+                                ) : (
+                                  <span
+                                    className="badge bg-light text-muted border px-2 py-1 rounded-pill"
+                                    style={{ fontSize: "10px" }}
+                                  >
+                                    No
+                                  </span>
+                                )}
+                              </td>
+                              <td className="text-center">
+                                {cat.is_active == 1 ||
+                                cat.is_active === true ? (
+                                  <span
+                                    className="badge bg-success-subtle text-success border px-2 py-1 rounded-pill"
+                                    style={{ fontSize: "10px" }}
+                                  >
+                                    Yes
+                                  </span>
+                                ) : (
+                                  <span
+                                    className="badge bg-danger-subtle text-danger border px-2 py-1 rounded-pill"
+                                    style={{ fontSize: "10px" }}
+                                  >
+                                    No
+                                  </span>
+                                )}
                               </td>
                               <td className="pe-3 text-end">
                                 <div className="d-flex gap-2 justify-content-end">
@@ -2117,11 +2532,12 @@ const ProductInfo = () => {
                                           cat.category_description ||
                                           cat.description ||
                                           "",
-                                        is_featured: !!cat.is_featured,
+                                        is_featured:
+                                          cat.is_featured == 1 ||
+                                          cat.is_featured === true,
                                         is_active:
-                                          cat.is_active !== undefined
-                                            ? !!cat.is_active
-                                            : true,
+                                          cat.is_active == 1 ||
+                                          cat.is_active === true,
                                       });
                                       setDeleteCatTarget(null);
                                     }}
