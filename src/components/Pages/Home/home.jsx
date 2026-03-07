@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import SideBar from "../../Common/SideBar/sidebar";
 import DashboardCards from "../../Common/Dashboard-cards/cards";
 import RecentOrderTable from "../../Common/Recent-order-table/recentOrder";
@@ -13,19 +13,15 @@ import Trend from "../../Assets/Images/home-img/trend.svg";
 import Rupee from "../../Assets/Images/home-img/Rupee.svg";
 import noDataImg from "../../Assets/Images/home-img/flat-design-no-data-illustration.png";
 import Cart from "../../Assets/Images/home-img/shopping-cart.svg";
-import { getData, postData } from "../../Common/APIs/api";
+import { postData } from "../../Common/APIs/api";
 import { DropdownContext } from "../../../Context/DropdownContext";
 
 const Home = () => {
   const { dropdownData } = useContext(DropdownContext);
   const [salesData, setSalesData] = useState();
 
-  useEffect(() => {
-    getSalesDataByAPI();
-  }, [dropdownData]);
-
-  const getSalesDataByAPI = async () => {
-    const endpoint = "/getAllSales";
+  const getSalesDataByAPI = useCallback(async () => {
+    const endpoint = "admin/getAllSales";
     try {
       const payload = {
         filterType: dropdownData.filterType,
@@ -39,7 +35,11 @@ const Home = () => {
     } catch (error) {
       console.log("error: ", error);
     }
-  };
+  }, [dropdownData]);
+
+  useEffect(() => {
+    getSalesDataByAPI();
+  }, [getSalesDataByAPI]);
 
   const DashboardCardData = [
     {

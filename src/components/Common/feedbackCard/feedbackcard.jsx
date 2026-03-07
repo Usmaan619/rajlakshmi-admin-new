@@ -9,7 +9,7 @@ import { clossModalById } from "../../../utils/helper";
 
 const FeedbackCard = React.memo(({ data, onDelete }) => {
   const [feedbackId, setFeedbackId] = useState(null);
-  const endpoint = "deleteFeedbackById";
+  const endpoint = "admin/deleteFeedbackById";
 
   const deleteFeedbackById = async () => {
     try {

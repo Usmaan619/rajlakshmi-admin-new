@@ -27,7 +27,6 @@ import RajlaxmiFeedback from "../components/Pages/RajlaxmiHome/rajlaxmiFeedback"
 import RajlaxmiContact from "../components/Pages/RajlaxmiHome/rajlaxmiContact";
 import { axiosInterceptor } from "../AxiosInstance/axiosInstance.jsx";
 import Error from "../components/Pages/Error404/error.jsx";
-import HomeBannerMainPage from "../components/Pages/Home-Banner/home-banner-main-page.jsx";
 import BannerManager from "../components/Pages/Home-Banner/home-banner.jsx";
 import ReelUploader from "../components/Pages/Reels/reelsUpload.jsx";
 import BlogMain from "../components/Pages/Blogs/BlogMain.jsx";

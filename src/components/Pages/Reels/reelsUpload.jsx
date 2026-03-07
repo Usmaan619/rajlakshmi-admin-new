@@ -4,7 +4,6 @@ import Navbar from "../../Common/Navbar/navbar";
 import {
   getData,
   postData,
-  deleteData,
   deleteDataNew,
 } from "../../Common/APIs/api";
 import { toastSuccess, toastError } from "../../../Services/toast.service";
@@ -23,6 +22,7 @@ const InstaReelEmbed = ({ reelId = "" }) => {
   return (
     <iframe
       src={src}
+      title={`Instagram Reel ${reelId}`}
       style={{ width: "100%", height: 600, border: "none" }}
       allow="autoplay; encrypted-media; picture-in-picture"
       allowFullScreen
@@ -38,7 +38,7 @@ const ReelUploader = () => {
 
   // load data
   const loadReels = async () => {
-    const res = await getData("/reels/all"); // <-- IMPORTANT
+    const res = await getData("admin/reels/all"); // <-- IMPORTANT
     if (res.success) {
       setReels(res.reels);
     }
@@ -55,12 +55,12 @@ const ReelUploader = () => {
     try {
       let res;
       if (editItem) {
-        res = await postData(`/reels/${editItem}`, payload);
+        res = await postData(`admin/reels/${editItem}`, payload);
       } else {
-        res = await postData("/reels", payload);
+        res = await postData("admin/reels", payload);
       }
 
-      console.log("SAVE RESPONSE:", res);
+
 
       if (res && res?.data?.success) {
         toastSuccess(editItem ? "Updated" : "Added");
@@ -79,16 +79,11 @@ const ReelUploader = () => {
   // delete
   const deleteReel = async (id) => {
     if (!window.confirm("Delete?")) return;
-    const res = await deleteDataNew(`/reels-delete/${id}`);
+    const res = await deleteDataNew(`admin/reels-delete/${id}`);
     if (res.success) {
       toastSuccess("Deleted");
       await loadReels();
     } else toastError("Failed");
-  };
-
-  const startEdit = (id, rid) => {
-    setEditItem(id);
-    setReelId(rid);
   };
 
   useEffect(() => {

@@ -29,7 +29,7 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
 
   // UPDATE ORDER STATUS
   const updateOrderStatus = async (id, status) => {
-    await postData(`/updateOrderStatus/${id}`, { status });
+    await postData(`admin/updateOrderStatus/${id}`, { status });
     refresh();
   };
 
@@ -65,6 +65,22 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
 
       {/* FILTERS */}
       <div className="d-flex gap-2 px-3 py-2 flex-wrap">
+        {/* Status Filter */}
+        <select
+          className="form-select w-auto"
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+        >
+          <option value="">All Status</option>
+          <option value="Pending">Pending</option>
+          <option value="Shipped">Shipped</option>
+          <option value="Delivered">Delivered</option>
+          <option value="Cancel">Cancel</option>
+        </select>
+
         {/* Payment Filter */}
         <select
           className="form-select w-auto"

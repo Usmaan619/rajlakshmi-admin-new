@@ -6,7 +6,7 @@ import Pagination from "react-bootstrap/Pagination";
 import noDataImg from "../../Assets/Images/home-img/flat-design-no-data-illustration.png";
 import { toastError, toastSuccess } from "../../../Services/toast.service";
 import CreateAdminUserModal from "./CreateAdminUserModal";
-import { Search, UserPlus, Edit2, Trash2, Users } from "lucide-react";
+import { UserPlus, Edit2, Trash2, Users } from "lucide-react";
 
 const GauswarnUsersTable = () => {
   const [users, setUsers] = useState([]);
@@ -18,7 +18,7 @@ const GauswarnUsersTable = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await getData("/getAllGauswarnUsers");
+      const res = await getData("admin/getAllGauswarnUsers");
       if (res.success) setUsers(res.users);
     } catch {
       toastError("Error loading users");
@@ -31,7 +31,7 @@ const GauswarnUsersTable = () => {
 
   const deleteUser = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
-    await deleteDataNew(`/deleteUser/${id}`);
+    await deleteDataNew(`admin/deleteUser/${id}`);
     toastSuccess("User deleted successfully");
     fetchUsers();
   };
@@ -92,6 +92,19 @@ const GauswarnUsersTable = () => {
       </div>
 
       <div className="p-4">
+        {/* Search Bar */}
+        <div className="mb-3" style={{ maxWidth: "400px" }}>
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search by name, email, or mobile..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
         <div className="table-responsive">
           <table className="table table-hover align-middle">
             <thead style={{ background: "#f6f0e4" }}>

@@ -15,10 +15,6 @@ const BannerManager = () => {
   const [uploading, setUploading] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchBanners();
-  }, []);
-
   const fetchBanners = useCallback(async () => {
     try {
       setLoading(true);
@@ -38,6 +34,10 @@ const BannerManager = () => {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    fetchBanners();
+  }, [fetchBanners]);
 
   const validateFile = (file) => {
     const maxSize = 10 * 1024 * 1024;
@@ -147,6 +147,7 @@ const BannerManager = () => {
                         <img
                           src={banners[`banner${slot}`]}
                           className="banner-image"
+                          alt={`Homepage banner ${slot}`}
                         />
                         <div className="banner-image-overlay"></div>
                       </div>

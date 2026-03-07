@@ -79,7 +79,7 @@ const CreateAdminUserModal = ({ show, onClose, onSuccess, editUser }) => {
       const token = localStorage.getItem("token");
 
       const response = await postData(
-        editUser ? `/updateUser/${editUser.id}` : "/register",
+        editUser ? `admin/updateUser/${editUser.id}` : "admin/register",
         formData,
         {
           headers: {

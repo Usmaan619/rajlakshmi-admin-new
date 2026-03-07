@@ -18,13 +18,13 @@ const NewsletterTable = ({
   };
 
   const updateStatus = async (id, status) => {
-    await postData(`/updateNewsletterStatus/${id}`, { status });
+    await postData(`admin/updateNewsletterStatus/${id}`, { status });
     refresh();
   };
 
   const remove = async (id) => {
     if (!window.confirm("Delete this email?")) return;
-    await deleteDataNew(`/deleteNewsletter/${id}`);
+    await deleteDataNew(`admin/deleteNewsletter/${id}`);
     toastSuccess("Deleted");
     refresh();
   };

@@ -12,7 +12,7 @@ const Contact = () => {
   }, []);
 
   const getContactsAPI = async () => {
-    const endpoint = "/getAllContact";
+    const endpoint = "admin/getAllContact";
     try {
       const response = await getData(endpoint);
       if (response?.success) setContacts(response?.contact || []);

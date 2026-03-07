@@ -29,7 +29,7 @@ const OfferTable = () => {
   const fetchOffers = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await getData("/getAllOffer");
+      const response = await getData("admin/getAllOffer");
 
       if (!response?.success) {
         toastError("Failed to load offers."); // [web:14][web:7]
@@ -65,7 +65,7 @@ const OfferTable = () => {
         source: isRajlaxmi ? "rajlaxmi" : "default",
       };
 
-      const response = await postData("/updateOffer", payload);
+      const response = await postData("admin/updateOffer", payload);
 
       if (response?.success) {
         toastSuccess("Offers updated successfully!"); // [web:6][web:9]

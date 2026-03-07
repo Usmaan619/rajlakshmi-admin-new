@@ -22,7 +22,7 @@ const Order = () => {
   }, []);
 
   const getOrderAPI = async () => {
-    const endpoint = "getAllOrderDetails";
+    const endpoint = "admin/getAllOrderDetails";
     try {
       const response = await getData(endpoint);
       if (response?.success) setOrders(response?.orderDetails || []);

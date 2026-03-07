@@ -12,7 +12,7 @@ const Customer = () => {
   }, []);
 
   const getCustomerAPI = async () => {
-    const endpoint = "/getAllCustomer";
+    const endpoint = "admin/getAllCustomer";
     try {
       const response = await getData(endpoint);
       if (response?.success) setCustomers(response?.customers || []);

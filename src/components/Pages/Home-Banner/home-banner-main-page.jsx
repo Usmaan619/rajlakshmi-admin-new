@@ -1,5 +1,4 @@
 import React from "react";
-import ProductTable from "../../Common/ProductTable/productTable";
 import Sidebar from "../../Common/SideBar/sidebar";
 import Navbar from "../../Common/Navbar/navbar";
 import BannerManager from "./home-banner";

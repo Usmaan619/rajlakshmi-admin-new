@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Sidebar from "../../Common/SideBar/sidebar";
 import Navbar from "../../Common/Navbar/navbar";
 import InquiryTable from "./inquiryTable";
@@ -14,13 +14,9 @@ const Inquiry = () => {
     status: "",
   });
 
-  useEffect(() => {
-    getInquiriesAPI();
-  }, [filters]);
-
-  const getInquiriesAPI = async () => {
+  const getInquiriesAPI = useCallback(async () => {
     try {
-      const endpoint = `getb2bInquiries?page=${filters.page}&limit=${filters.limit}&search=${filters.search}&status=${filters.status}`;
+      const endpoint = `admin/getb2bInquiries?page=${filters.page}&limit=${filters.limit}&search=${filters.search}&status=${filters.status}`;
       const response = await getData(endpoint);
       if (response?.success) {
         setInquiries(response.data || []);
@@ -29,7 +25,11 @@ const Inquiry = () => {
     } catch (error) {
       console.log("Inquiry Fetch Error:", error);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    getInquiriesAPI();
+  }, [getInquiriesAPI]);
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>

@@ -8,7 +8,6 @@ import { useSearchParams } from "react-router-dom";
 const CustomerInfo = () => {
   const [searchParams] = useSearchParams();
   const customerData = JSON?.parse(searchParams.get("customerData"));
-  console.log("customerData: =================", customerData);
   return (
     <>
       <div className="container-fluid gauswarn-bg-color">

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Pagination from "react-bootstrap/Pagination";
 import { IoIosArrowRoundForward, IoIosArrowRoundBack } from "react-icons/io";
-import { deleteData, deleteDataNew, postData } from "../../Common/APIs/api";
+import { deleteDataNew, postData } from "../../Common/APIs/api";
 import noDataImg from "../../Assets/Images/home-img/flat-design-no-data-illustration.png";
 import { toastError, toastSuccess } from "../../../Services/toast.service";
 
@@ -27,7 +27,7 @@ const InquiryTable = ({
 
     console.log("Deleting ID:", id);
 
-    const response = await deleteDataNew(`/deleteb2bInquiry/${id}`);
+    const response = await deleteDataNew(`admin/deleteb2bInquiry/${id}`);
 
     if (response?.success) {
       toastSuccess("Inquiry deleted successfully!");
@@ -39,7 +39,7 @@ const InquiryTable = ({
 
   // UPDATE STATUS USING POST (as required)
   const updateStatus = async (id, status) => {
-    const response = await postData(`/updateb2bInquiry/${id}`, { status });
+    const response = await postData(`admin/updateb2bInquiry/${id}`, { status });
     if (response?.success) refresh();
   };
 

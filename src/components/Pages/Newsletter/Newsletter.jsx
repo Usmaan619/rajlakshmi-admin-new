@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Sidebar from "../../Common/SideBar/sidebar";
 import Navbar from "../../Common/Navbar/navbar";
 import NewsletterTable from "./NewsletterTable";
@@ -14,18 +14,18 @@ const NewsletterPage = () => {
     status: "",
   });
 
-  useEffect(() => {
-    loadNewsletter();
-  }, [filters]);
-
-  const loadNewsletter = async () => {
-    const endpoint = `getNewsletter?page=${filters.page}&limit=${filters.limit}&search=${filters.search}&status=${filters.status}`;
+  const loadNewsletter = useCallback(async () => {
+    const endpoint = `admin/getNewsletter?page=${filters.page}&limit=${filters.limit}&search=${filters.search}&status=${filters.status}`;
     const res = await getData(endpoint);
     if (res?.success) {
       setList(res.data);
       setPagination(res.pagination);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    loadNewsletter();
+  }, [loadNewsletter]);
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
