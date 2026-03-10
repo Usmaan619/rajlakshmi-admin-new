@@ -10,7 +10,8 @@ import {
   MdSlowMotionVideo,
 } from "react-icons/md";
 import { BiPhone } from "react-icons/bi";
-import { FaRegCommentDots, FaBars, FaUsers } from "react-icons/fa6";
+import { FaRegCommentDots, FaBars, FaUsers, FaYoutube } from "react-icons/fa6";
+
 import LogoRajlaxmi from "../../Assets/Images/Logo/rajlaxmi.svg";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { UserContext } from "../../../Context/UserContext";
@@ -98,6 +99,13 @@ const Sidebar = () => {
       label: "Reels",
       permission: "reels",
     },
+    {
+      to: "/youtube-shorts",
+      icon: FaYoutube,
+      label: "YouTube Shorts",
+      permission: "reels",
+    },
+
     {
       to: "/blog",
       icon: LayoutPanelTop,

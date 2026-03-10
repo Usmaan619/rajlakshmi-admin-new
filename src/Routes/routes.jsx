@@ -37,6 +37,8 @@ import BlogEdit from "../components/Pages/Blogs/BlogEdit.jsx";
 import BlogsTest from "../components/Pages/Blogs/blogtest.jsx";
 import Inquiry from "../components/Pages/Inquiry/Inquiry.jsx";
 import NewsletterPage from "../components/Pages/Newsletter/Newsletter.jsx";
+import YoutubeShortsUploader from "../components/Pages/YouTubeShorts/youtubeShorts.jsx";
+
 
 import CreateAdminUserPage from "../components/Pages/CreateAdminUser/CreateAdminUserPage.jsx";
 import OfferManagement from "../components/OfferManagement/OfferManagement.jsx";
@@ -67,6 +69,8 @@ const AuthRoutes = () => {
           <Route path="/home-page-banner-change" element={<BannerManager />} />
 
           <Route path="/reels-upload" element={<ReelUploader />} />
+          <Route path="/youtube-shorts" element={<YoutubeShortsUploader />} />
+
 
           <Route path="/productinfo" element={<ProductInfo />} />
           <Route path="/customer" element={<Customer />} />

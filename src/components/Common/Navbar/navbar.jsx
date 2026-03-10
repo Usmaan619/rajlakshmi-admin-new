@@ -36,19 +36,6 @@ const Navbar = () => {
     <div className="navbar-container">
       <div className="navbar-row d-flex flex-wrap justify-content-end align-items-center">
         {/* Switch Dashboard Button */}
-        <NavLink to={linkTo} className="text-decoration-none">
-          <div
-            className="dashboard-btn"
-            style={{
-              background: isRajlaxmi
-                ? "linear-gradient(135deg, #92400e, #78350f)"
-                : "linear-gradient(135deg, #e07a5f, #c96745)",
-            }}
-          >
-            <FaExchangeAlt size={13} />
-            <span>{title}</span>
-          </div>
-        </NavLink>
 
         {/* Profile Button */}
         <button
