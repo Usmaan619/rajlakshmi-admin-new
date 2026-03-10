@@ -23,7 +23,7 @@ const CustomerInfoForm = ({ CustomerInfoData }) => {
               disabled
               type="text"
               placeholder="Full Name"
-              value={CustomerInfoData?.user_name}
+              value={CustomerInfoData?.full_name}
             />
           </div>
           <div className="form-row">
@@ -32,65 +32,127 @@ const CustomerInfoForm = ({ CustomerInfoData }) => {
               disabled
               type="email"
               placeholder="Email"
-              value={CustomerInfoData?.user_email}
+              value={CustomerInfoData?.email}
             />
             <input
               disabled
               type="tel"
               placeholder="Phone Number"
-              value={CustomerInfoData?.user_mobile_num}
+              value={CustomerInfoData?.mobile_number}
             />
           </div>
         </section>
 
-        {/* Section: Customer's Address */}
+        {/* Section: Customer's Addresses */}
         <section>
-          <h4>Customers Address</h4>
-          <div className="form-row">
-            {/* Address and Apartment input disableds */}
-            <input
-              value={CustomerInfoData?.user_house_number}
-              disabled
-              type="text"
-              placeholder="Address"
-            />
-            <input
-              value={CustomerInfoData?.user_landmark}
-              disabled
-              type="text"
-              placeholder="Apartment"
-            />
-          </div>
-          <div className="form-row">
-            {/* City, Country, and Code input disableds */}
-            <input
-              value={CustomerInfoData?.user_city}
-              disabled
-              type="text"
-              placeholder="City"
-            />
-            <input
-              value={CustomerInfoData?.user_country}
-              disabled
-              type="text"
-              placeholder="Country"
-            />
-            <input
-              value={CustomerInfoData?.user_pincode}
-              disabled
-              type="text"
-              placeholder="Code"
-            />
-          </div>
-          <div className="form-row">
-            {/* Extra Phone Number input disabled (optional) */}
-            <input
-              value={CustomerInfoData?.user_mobile_num}
-              disabled
-              type="text"
-              placeholder="Phone No."
-            />
-          </div>
+          <h4>Customer's Addresses</h4>
+          {CustomerInfoData?.addresses && CustomerInfoData.addresses.length > 0 ? (
+            CustomerInfoData.addresses.map((addr, index) => (
+              <div key={addr.id || index} className="address-card mb-4 p-3 border rounded">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h6 className="mb-0 fw-bold">Address {index + 1} {addr.is_default === 1 && <span className="badge bg-primary ms-2">Default</span>}</h6>
+                  {addr.full_name && <span className="text-muted small">Recipient: {addr.full_name}</span>}
+                </div>
+                <div className="form-row">
+                  <input
+                    value={addr.address_line1}
+                    disabled
+                    type="text"
+                    placeholder="Address Line 1"
+                  />
+                  <input
+                    value={addr.address_line2}
+                    disabled
+                    type="text"
+                    placeholder="Address Line 2"
+                  />
+                </div>
+                <div className="form-row">
+                  <input
+                    value={addr.city}
+                    disabled
+                    type="text"
+                    placeholder="City"
+                  />
+                  <input
+                    value={addr.state}
+                    disabled
+                    type="text"
+                    placeholder="State"
+                  />
+                </div>
+                <div className="form-row">
+                  <input
+                    value={addr.country}
+                    disabled
+                    type="text"
+                    placeholder="Country"
+                  />
+                  <input
+                    value={addr.pincode}
+                    disabled
+                    type="text"
+                    placeholder="Pincode"
+                  />
+                </div>
+                {addr.phone && (
+                  <div className="form-row">
+                    <input
+                      value={addr.phone}
+                      disabled
+                      type="text"
+                      placeholder="Address Contact"
+                    />
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <>
+              <div className="form-row">
+                <input
+                  value={CustomerInfoData?.address_line1}
+                  disabled
+                  type="text"
+                  placeholder="Address Line 1"
+                />
+                <input
+                  value={CustomerInfoData?.address_line2}
+                  disabled
+                  type="text"
+                  placeholder="Address Line 2"
+                />
+              </div>
+              <div className="form-row">
+                <input
+                  value={CustomerInfoData?.city}
+                  disabled
+                  type="text"
+                  placeholder="City"
+                />
+                <input
+                  value={CustomerInfoData?.state}
+                  disabled
+                  type="text"
+                  placeholder="State"
+                />
+              </div>
+              <div className="form-row">
+                <input
+                  value={CustomerInfoData?.country}
+                  disabled
+                  type="text"
+                  placeholder="Country"
+                />
+                <input
+                  value={CustomerInfoData?.pincode}
+                  disabled
+                  type="text"
+                  placeholder="Pincode"
+                />
+              </div>
+            </>
+          )}
         </section>
       </form>
     </div>

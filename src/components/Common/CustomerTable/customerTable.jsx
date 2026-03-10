@@ -17,6 +17,7 @@ import noDataImg from "../../Assets/Images/home-img/flat-design-no-data-illustra
 // Rajlaxmi-Admin-Panel/src/components/Assets/Images/Logo/mainlogo.png
 
 const CustomerTable = ({ CustomerData }) => {
+  console.log(CustomerData);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All");
@@ -24,11 +25,19 @@ const CustomerTable = ({ CustomerData }) => {
   const itemsPerPage = 8;
 
   const filteredProducts = CustomerData?.filter((item) => {
-    const nameMatch = item.user_name
+    const nameMatch = item.full_name
       ?.toLowerCase()
       ?.includes(searchTerm?.toLowerCase());
 
-    const pincodeMatch = String(item.user_pincode)
+    const emailMatch = item.email
+      ?.toLowerCase()
+      ?.includes(searchTerm?.toLowerCase());
+
+    const mobileMatch = item.mobile_number
+      ?.toLowerCase()
+      ?.includes(searchTerm?.toLowerCase());
+
+    const idMatch = String(item.id)
       ?.toLowerCase()
       ?.includes(searchTerm?.toLowerCase());
 
@@ -36,16 +45,16 @@ const CustomerTable = ({ CustomerData }) => {
       selectedFilter === "All"
         ? true
         : selectedFilter === "In Stock"
-          ? item.user_landmark !== "Out Of location"
-          : item.user_landmark === "Out Of location";
+          ? item.status === "active"
+          : item.status !== "active";
 
-    return (nameMatch || pincodeMatch) && filterCondition;
+    return (nameMatch || emailMatch || mobileMatch || idMatch) && filterCondition;
   });
 
   const totalPages = Math?.ceil(filteredProducts?.length / itemsPerPage);
   const paginatedProducts = filteredProducts?.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
   const isRajlaxmi = window.location.pathname.includes("rajlaxmi");
 
@@ -63,7 +72,6 @@ const CustomerTable = ({ CustomerData }) => {
           <h3>No Customer Data Found</h3>
         </div>
       ) : (
-
         <div className="recent-table bg-white">
           <p className="p-3 recent-tble-header text-murmaid-color bg-light-green-color font-20 inter-font-family-500">
             Customer
@@ -71,29 +79,15 @@ const CustomerTable = ({ CustomerData }) => {
 
           {/* Filters */}
           <form className="row gy-3 px-lg-5 px-3 pb-4 pt-2 w-100">
-            {/* <div className="col-12 col-sm-6 col-lg-2">
-              <Dropdown className='border rounded-3 w-100'>
-                <Dropdown.Toggle variant="white" className="d-flex justify-content-between align-items-center w-100">
-                  <span>{selectedFilter || "Filter"}</span>
-                  <span className="ms-auto"><IoIosArrowDown /></span>
-                </Dropdown.Toggle>
-                <Dropdown.Menu className='w-100'>
-                  <Dropdown.Item onClick={() => setSelectedFilter('')}>All</Dropdown.Item>
-                  <Dropdown.Item onClick={() => setSelectedFilter('Pending')}>Pending</Dropdown.Item>
-                  <Dropdown.Item onClick={() => setSelectedFilter('Shipped')}>Shipped</Dropdown.Item>
-                  <Dropdown.Item onClick={() => setSelectedFilter('Delivered')}>Delivered</Dropdown.Item>
-                  <Dropdown.Item onClick={() => setSelectedFilter('Cancel')}>Cancel</Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            </div> */}
-
-            <div className='col-lg-4'>
+            <div className="col-lg-4">
               <div className="input-group">
-                <span className="input-group-text bg-white border-end-0"><IoIosSearch /></span>
+                <span className="input-group-text bg-white border-end-0">
+                  <IoIosSearch />
+                </span>
                 <input
                   className="form-control border border-start-0"
                   type="search"
-                  placeholder="Search by Name or CustomerID"
+                  placeholder="Search by Name, Email or Mobile"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -106,19 +100,22 @@ const CustomerTable = ({ CustomerData }) => {
               <thead className="text-center">
                 <tr>
                   <th className="text-dark-silver-color inter-font-family-500 align-middle">
-                    Customer ID
+                    ID
                   </th>
                   <th className="text-start text-dark-silver-color inter-font-family-500 align-middle ps-5">
                     <div className="d-flex align-items-center">Name</div>
                   </th>
                   <th className="text-dark-silver-color inter-font-family-500 align-middle">
-                    Location
+                    Email
                   </th>
                   <th className="text-dark-silver-color inter-font-family-500 align-middle">
-                    Pincode
+                    Mobile No
                   </th>
                   <th className="text-dark-silver-color inter-font-family-500 align-middle">
-                    Amount
+                    Status
+                  </th>
+                  <th className="text-dark-silver-color inter-font-family-500 align-middle">
+                    Joined
                   </th>
                   <th className="text-dark-silver-color inter-font-family-500 align-middle">
                     Actions
@@ -130,27 +127,32 @@ const CustomerTable = ({ CustomerData }) => {
                 {paginatedProducts?.map((c, index) => (
                   <tr key={index}>
                     <td className="text-murmaid-color inter-font-family-400 align-middle">
-                      {c?.user_id}
+                      {c?.id}
                     </td>
 
-                    <td className="text-murmaid-color inter-font-family-400 align-middle ps-5">
+                    <td className="text-murmaid-color inter-font-family-400 align-middle ps-5 text-start">
                       <div className="d-flex align-items-center">
-                        {c?.user_name}
+                        {c?.full_name}
                       </div>
                     </td>
                     <td className="text-murmaid-color inter-font-family-400 align-middle">
-                      {c?.user_landmark}, {c?.user_city}, {c?.user_state}
+                      {c?.email}
                     </td>
                     <td className="text-murmaid-color inter-font-family-400 align-middle">
-                      {c?.user_pincode}
+                      {c?.mobile_number}
                     </td>
                     <td className="text-murmaid-color inter-font-family-400 align-middle">
-                      ₹ {c?.user_total_amount ?? "-"}
+                      <span className={`badge ${c?.status === 'active' ? 'bg-success' : 'bg-danger'}`}>
+                        {c?.status}
+                      </span>
+                    </td>
+                    <td className="text-murmaid-color inter-font-family-400 align-middle">
+                      {new Date(c?.created_at).toLocaleDateString()}
                     </td>
                     <td className="text-murmaid-color inter-font-family-400 align-middle">
                       <div className="d-flex align-items-center justify-content-center">
                         <NavLink
-                          to={`/customerinfo?customerData=${JSON.stringify(c)}`}
+                          to={`/customerinfo?customerData=${encodeURIComponent(JSON.stringify(c))}`}
                         >
                           <span className="border-2 border eye-icon-color fs-5 p-1 rounded-3 d-flex align-items-center justify-content-center">
                             <IoEyeOutline />
@@ -182,7 +184,7 @@ const CustomerTable = ({ CustomerData }) => {
                   length: itemsPerPage - paginatedProducts?.length,
                 }).map((_, i) => (
                   <tr key={`empty-${i}`}>
-                    <td colSpan="6" className="empty_row"></td>
+                    <td colSpan="7" className="empty_row"></td>
                   </tr>
                 ))}
               </tbody>

@@ -12,10 +12,14 @@ const Customer = () => {
   }, []);
 
   const getCustomerAPI = async () => {
-    const endpoint = "admin/getAllCustomer";
+    const endpoint = "admin/getRajlaxmiUsers";
     try {
       const response = await getData(endpoint);
-      if (response?.success) setCustomers(response?.customers || []);
+      if (Array.isArray(response)) {
+        setCustomers(response);
+      } else if (response?.success) {
+        setCustomers(response?.Customer || []);
+      }
     } catch (error) {
       console.log("error: ", error);
     }

@@ -73,3 +73,20 @@ textarea {
   background-color: var(--red-color);
   color: white;
 }   
+
+.address-card {
+  background-color: #fcfcfc;
+  transition: all 0.3s ease;
+}
+
+.address-card:hover {
+  border-color: var(--light-green-color) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.badge.bg-primary {
+  background-color: #007bff !important;
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+  font-weight: 500;
+}

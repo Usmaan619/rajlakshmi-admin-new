@@ -4,6 +4,7 @@ import { IoIosArrowRoundBack, IoIosArrowRoundForward } from "react-icons/io";
 import { deleteDataNew, postData } from "../../Common/APIs/api";
 import { toastSuccess } from "../../../Services/toast.service";
 import "./newsletter.css"; // 👈 CSS import
+import moment from "moment/moment";
 
 const NewsletterTable = ({
   data,
@@ -51,6 +52,7 @@ const NewsletterTable = ({
           <tr>
             <th>Email</th>
             <th>Status</th>
+            <th>Created At</th>
             <th>Action</th>
           </tr>
         </thead>
@@ -59,6 +61,7 @@ const NewsletterTable = ({
           {data.map((i) => (
             <tr key={i.id}>
               <td>{i.email}</td>
+              <td>{moment(i.created_at).format("YYYY-MM-DD")}</td>
               <td>
                 <select
                   value={i.status}
