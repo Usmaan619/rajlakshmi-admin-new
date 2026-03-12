@@ -48,7 +48,9 @@ const CustomerTable = ({ CustomerData }) => {
           ? item.status === "active"
           : item.status !== "active";
 
-    return (nameMatch || emailMatch || mobileMatch || idMatch) && filterCondition;
+    return (
+      (nameMatch || emailMatch || mobileMatch || idMatch) && filterCondition
+    );
   });
 
   const totalPages = Math?.ceil(filteredProducts?.length / itemsPerPage);
@@ -142,7 +144,9 @@ const CustomerTable = ({ CustomerData }) => {
                       {c?.mobile_number}
                     </td>
                     <td className="text-murmaid-color inter-font-family-400 align-middle">
-                      <span className={`badge ${c?.status === 'active' ? 'bg-success' : 'bg-danger'}`}>
+                      <span
+                        className={`badge ${c?.status === "active" ? "bg-success" : "bg-danger"}`}
+                      >
                         {c?.status}
                       </span>
                     </td>

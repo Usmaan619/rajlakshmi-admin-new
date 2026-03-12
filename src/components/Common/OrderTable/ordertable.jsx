@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { postData } from "../../Common/APIs/api";
 import Pagination from "react-bootstrap/Pagination";
 import noDataImg from "../../Assets/Images/home-img/flat-design-no-data-illustration.png";
+import moment from "moment/moment";
 
 const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -136,6 +137,7 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
               paginatedOrders.map((order, index) => (
                 <tr key={index}>
                   <td>{order?.user_id}</td>
+                  <td>{moment(order?.DATE).format("DD-MM-YYYY")}</td>
                   <td>{order?.user_name}</td>
                   <td>{new Date(order?.DATE).toLocaleDateString("en-GB")}</td>
                   <td>₹ {order?.user_total_amount}</td>
@@ -152,7 +154,7 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
                       className="form-select d-inline-block w-auto"
                       value={order.STATUS}
                       onChange={(e) =>
-                        updateOrderStatus(order.user_id, e.target.value)
+                        updateOrderStatus(order.id, e.target.value)
                       }
                     >
                       <option value="Pending">Pending</option>
@@ -274,14 +276,12 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
                     {viewData.user_country && <>{viewData.user_country}</>}
                   </div>
                 </div>
-
                 {/* PAYMENT DETAILS (PARSED JSON) */}
                 {(() => {
                   let payment = null;
 
                   try {
                     if (viewData.paymentDetails) {
-                      // paymentDetails string hai to JSON.parse karenge
                       payment =
                         typeof viewData.paymentDetails === "string"
                           ? JSON.parse(viewData.paymentDetails)
@@ -299,16 +299,14 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
                     );
                   }
 
-                  // Amount paise me hota hai (e.g. 239800 = ₹2398.00)
                   const amount = payment.amount
                     ? (payment.amount / 100).toFixed(2)
                     : null;
-                  const amountCaptured = payment.amount_captured
-                    ? (payment.amount_captured / 100).toFixed(2)
-                    : null;
+
                   const fee = payment.fee
                     ? (payment.fee / 100).toFixed(2)
                     : null;
+
                   const tax = payment.tax
                     ? (payment.tax / 100).toFixed(2)
                     : null;
@@ -322,132 +320,109 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
                       <div className="card-header">
                         <strong>Payment Details</strong>
                       </div>
+
                       <div className="card-body">
                         <div className="row">
                           <div className="col-md-6">
-                            <p className="mb-1">
+                            <p>
                               <strong>Payment ID:</strong> {payment.id}
                             </p>
-                            <p className="mb-1">
+                            <p>
                               <strong>Order ID:</strong> {payment.order_id}
                             </p>
-                            <p className="mb-1">
-                              <strong>Method:</strong>{" "}
-                              {payment.method?.toUpperCase()}
+                            <p>
+                              <strong>Method:</strong> {payment.method}
                             </p>
-                            <p className="mb-1">
+
+                            <p>
                               <strong>Status:</strong>{" "}
                               <span
                                 className={
                                   payment.status === "captured"
                                     ? "badge bg-success"
-                                    : payment.status === "failed"
-                                      ? "badge bg-danger"
-                                      : "badge bg-secondary"
+                                    : "badge bg-danger"
                                 }
                               >
                                 {payment.status}
                               </span>
                             </p>
+
                             {createdAt && (
-                              <p className="mb-1">
-                                <strong>Payment Date & Time:</strong>{" "}
-                                {createdAt}
+                              <p>
+                                <strong>Date:</strong> {createdAt}
                               </p>
                             )}
                           </div>
 
                           <div className="col-md-6">
                             {amount && (
-                              <p className="mb-1">
-                                <strong>Amount:</strong> ₹{amount}{" "}
-                                {payment.currency && `(${payment.currency})`}
+                              <p>
+                                <strong>Amount:</strong> ₹{amount}
                               </p>
                             )}
-                            {amountCaptured && (
-                              <p className="mb-1">
-                                <strong>Amount Captured:</strong> ₹
-                                {amountCaptured}
-                              </p>
-                            )}
+
                             {fee && (
-                              <p className="mb-1">
+                              <p>
                                 <strong>Gateway Fee:</strong> ₹{fee}
                               </p>
                             )}
+
                             {tax && (
-                              <p className="mb-1">
+                              <p>
                                 <strong>Tax:</strong> ₹{tax}
-                              </p>
-                            )}
-                            {payment.upi?.vpa && (
-                              <p className="mb-1">
-                                <strong>UPI ID:</strong> {payment.upi.vpa}
-                              </p>
-                            )}
-                            {payment.acquirer_data?.rrn && (
-                              <p className="mb-1">
-                                <strong>RRN:</strong>{" "}
-                                {payment.acquirer_data.rrn}
                               </p>
                             )}
                           </div>
                         </div>
 
-                        {/* Optional: Notes / Extra Info */}
-                        {payment.description && (
-                          <p className="mt-2 mb-1">
-                            <strong>Description:</strong> {payment.description}
-                          </p>
+                        {/* CART ITEMS */}
+                        {payment.notes?.cart?.length > 0 && (
+                          <div className="mt-4">
+                            <h5>Cart Items</h5>
+
+                            <table className="table table-bordered">
+                              <thead>
+                                <tr>
+                                  <th>#</th>
+                                  <th>Product</th>
+                                  <th>Weight</th>
+                                  <th>Price</th>
+                                  <th>Qty</th>
+                                  <th>Total</th>
+                                </tr>
+                              </thead>
+
+                              <tbody>
+                                {payment.notes.cart.map((item, index) => (
+                                  <tr key={index}>
+                                    <td>{index + 1}</td>
+
+                                    <td>{item.name}</td>
+
+                                    <td>{item.weight}</td>
+
+                                    <td>₹{item.price}</td>
+
+                                    <td>{item.quantity}</td>
+
+                                    <td>₹{item.price * item.quantity}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         )}
 
+                        {/* NOTES */}
                         {payment.notes && (
                           <div className="mt-3">
-                            <strong>Notes:</strong>
-
-                            {/* CART ITEMS */}
-                            {payment.notes.cart &&
-                              Array.isArray(payment.notes.cart) && (
-                                <div className="mt-2">
-                                  <strong>Cart Items:</strong>
-                                  <table className="table table-bordered mt-2">
-                                    <thead>
-                                      <tr>
-                                        <th>Image</th>
-                                        <th>Product ID</th>
-                                        <th>Price</th>
-                                        <th>Qty</th>
-                                        <th>Total</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {payment.notes.cart.map((item, i) => (
-                                        <tr key={i}>
-                                          <td>
-                                            <img
-                                              src={item.product_image}
-                                              alt="product"
-                                              width="50"
-                                            />
-                                          </td>
-                                          <td>{item.product_id}</td>
-                                          <td>₹{item.product_price}</td>
-                                          <td>{item.product_quantity}</td>
-                                          <td>₹{item.product_total_amount}</td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              )}
-
-                            {/* OTHER NOTES */}
-                            <ul className="mb-0">
+                            <h6>Other Details</h6>
+                            <ul>
                               {Object.entries(payment.notes)
                                 .filter(([key]) => key !== "cart")
                                 .map(([key, value]) => (
                                   <li key={key}>
-                                    <strong>{key}:</strong> {String(value)}
+                                    <strong>{key}:</strong> {value}
                                   </li>
                                 ))}
                             </ul>
