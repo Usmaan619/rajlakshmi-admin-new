@@ -24,95 +24,158 @@ const parseImages = (val) => {
 
 const parseWeight = (val) => {
   if (!val) return [];
-  if (Array.isArray(val)) return val;
+  if (Array.isArray(val)) {
+    return val.map((v) =>
+      typeof v === "string"
+        ? { weight: v, price: 0, purchase_price: 0, del_price: 0 }
+        : v,
+    );
+  }
   try {
     const parsed = JSON.parse(val);
-    return Array.isArray(parsed) ? parsed : [String(val)];
+    if (Array.isArray(parsed)) {
+      return parsed.map((v) =>
+        typeof v === "string"
+          ? { weight: v, price: 0, purchase_price: 0, del_price: 0 }
+          : v,
+      );
+    }
+    return [{ weight: String(val), price: 0, purchase_price: 0, del_price: 0 }];
   } catch {
-    return [String(val)];
+    return [{ weight: String(val), price: 0, purchase_price: 0, del_price: 0 }];
   }
 };
 
 /* ── WeightTagInput: dynamic weight chips ─────────────────────────────────── */
-const WeightTagInput = ({ weights, setWeights }) => {
-  const [input, setInput] = useState("");
+const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
+  const [weight, setWeight] = useState("");
+  const [price, setPrice] = useState("");
+  const [purchasePrice, setPurchasePrice] = useState("");
+  const [delPrice, setDelPrice] = useState("");
 
-  const addWeight = () => {
-    const v = input.trim();
-    if (v && !weights.includes(v)) setWeights([...weights, v]);
-    setInput("");
+  const addVariant = () => {
+    if (!weight.trim()) return;
+    const newVariant = {
+      weight: weight.trim(),
+      price: Number(price) || 0,
+      purchase_price: Number(purchasePrice) || 0,
+      del_price: Number(delPrice) || 0,
+    };
+    const updated = [...variants, newVariant];
+    setVariants(updated);
+
+    // If it's the first variant, optionally notify parent to sync main prices
+    if (updated.length === 1 && onFirstVariant) {
+      onFirstVariant(newVariant);
+    }
+
+    setWeight("");
+    setPrice("");
+    setPurchasePrice("");
+    setDelPrice("");
   };
 
-  const removeWeight = (i) => setWeights(weights.filter((_, idx) => idx !== i));
+  const removeVariant = (i) =>
+    setVariants(variants.filter((_, idx) => idx !== i));
 
   return (
-    <div>
-      <div className="d-flex gap-2 mb-2">
-        <input
-          type="text"
-          className="form-control"
-          placeholder="e.g. 500ml, 1kg …"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              addWeight();
-            }
-          }}
-        />
-        <button
-          type="button"
-          className="btn btn-outline-secondary px-3"
-          onClick={addWeight}
-        >
-          Add
-        </button>
-      </div>
-      <div className="d-flex flex-wrap gap-2">
-        {weights.map((w, i) => (
-          <span
-            key={i}
-            className="badge rounded-pill px-3 py-2 d-inline-flex align-items-center"
-            style={{
-              background: "#f3f0ff",
-              color: "#6d28d9",
-              fontSize: "13px",
-              fontWeight: 600,
-              border: "1px solid #ddd6fe",
-            }}
+    <div
+      className="p-3 rounded-3"
+      style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
+    >
+      <div className="row g-2 mb-3 align-items-end">
+        <div className="col-md-3">
+          <label className="form-label small fw-bold mb-1">Weight</label>
+          <input
+            type="text"
+            className="form-control form-control-sm"
+            placeholder="e.g. 500gm"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+          />
+        </div>
+        <div className="col-md-2">
+          <label className="form-label small fw-bold mb-1">Purchase ₹</label>
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            placeholder="0"
+            value={purchasePrice}
+            onChange={(e) => setPurchasePrice(e.target.value)}
+          />
+        </div>
+        <div className="col-md-2">
+          <label className="form-label small fw-bold mb-1">Selling ₹</label>
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            placeholder="0"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+          />
+        </div>
+        <div className="col-md-2">
+          <label className="form-label small fw-bold mb-1">MRP ₹</label>
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            placeholder="0"
+            value={delPrice}
+            onChange={(e) => setDelPrice(e.target.value)}
+          />
+        </div>
+        <div className="col-md-3">
+          <button
+            type="button"
+            className="btn btn-primary btn-sm w-100"
+            style={{ height: "31px", fontWeight: 600 }}
+            onClick={addVariant}
           >
-            {w}
-            <span
-              className="ms-2 d-flex align-items-center justify-content-center"
-              style={{
-                cursor: "pointer",
-                width: "18px",
-                height: "18px",
-                borderRadius: "50%",
-                background: "rgba(109, 40, 217, 0.1)",
-                transition: "all 0.2s",
-              }}
-              onClick={() => removeWeight(i)}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = "#fee2e2";
-                e.currentTarget.style.color = "#ef4444";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = "rgba(109, 40, 217, 0.1)";
-                e.currentTarget.style.color = "inherit";
-              }}
-              title="Remove variant"
-            >
-              <i className="bi bi-x" style={{ fontSize: "16px" }}></i>
-            </span>
-          </span>
-        ))}
-        {weights.length === 0 && (
-          <small className="text-muted">
-            No weights added yet. Type and press Enter or +
-          </small>
-        )}
+            Add Variant
+          </button>
+        </div>
+      </div>
+
+      <div className="table-responsive rounded-2 overflow-hidden border">
+        <table className="table table-sm table-hover mb-0 align-middle">
+          <thead className="table-light">
+            <tr style={{ fontSize: "11px", textTransform: "uppercase" }}>
+              <th className="ps-3">Weight</th>
+              <th>Purchase</th>
+              <th>Selling</th>
+              <th>MRP</th>
+              <th className="text-end pe-3">Action</th>
+            </tr>
+          </thead>
+          <tbody style={{ fontSize: "12px" }}>
+            {variants.map((v, i) => (
+              <tr key={i}>
+                <td className="ps-3 fw-bold text-primary">{v.weight}</td>
+                <td>₹{v.purchase_price}</td>
+                <td className="fw-bold text-success">₹{v.price}</td>
+                <td className="text-muted text-decoration-line-through">
+                  ₹{v.del_price}
+                </td>
+                <td className="text-end pe-3">
+                  <button
+                    type="button"
+                    className="btn btn-link link-danger btn-sm p-0"
+                    onClick={() => removeVariant(i)}
+                  >
+                    remove
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {variants.length === 0 && (
+              <tr>
+                <td colSpan="5" className="text-center py-3 text-muted">
+                  No variants added. Please add at least one.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -486,14 +549,15 @@ const ProductInfo = () => {
 
   /* ── submit: Add Product ──────────────────────────────────────────────── */
   const onAddProduct = async (data) => {
-    // if (addImages.length < 4) {
-    //   toastError("Minimum 4 images are required.");
-    //   return;
-    // }
-    // if (addWeights.length === 0) {
-    //   toastError("Add at least one weight variant.");
-    //   return;
-    // }
+    if (addImages.length === 0) {
+      toastError("Please add at least one image.");
+      return;
+    }
+
+    if (addWeights.length === 0) {
+      toastError("Add at least one weight variant.");
+      return;
+    }
     try {
       const fd = new FormData();
       Object.entries(data).forEach(([k, v]) => {
@@ -872,22 +936,27 @@ const ProductInfo = () => {
                               </span>
                             </td>
                             <td>
-                              <div className="d-flex flex-wrap gap-1">
+                              <div className="d-flex flex-column gap-1">
                                 {parseWeight(p.product_weight).map((w, wi) => (
-                                  <span
+                                  <div
                                     key={wi}
+                                    className="d-flex justify-content-between align-items-center"
                                     style={{
-                                      background: "#f1f5f9",
+                                      background: "#f8fafc",
                                       color: "#475569",
                                       fontSize: "11px",
                                       fontWeight: 500,
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
+                                      padding: "2px 8px",
+                                      borderRadius: "4px",
                                       border: "1px solid #e2e8f0",
+                                      minWidth: "120px",
                                     }}
                                   >
-                                    {w}
-                                  </span>
+                                    <span className="fw-bold">{w.weight}</span>
+                                    <span className="ms-2 text-success">
+                                      ₹{w.price}
+                                    </span>
+                                  </div>
                                 ))}
                               </div>
                             </td>
@@ -1222,17 +1291,27 @@ const ProductInfo = () => {
                       )}
                     </div>
 
-                    {/* Weight Tags */}
+                    {/* Weight Variants */}
                     <div className="col-12">
                       <label className="form-label fw-semibold small">
-                        Weight Variants <span className="text-danger">*</span>{" "}
+                        Weight/Price Variants{" "}
+                        <span className="text-danger">*</span>{" "}
                         <span className="text-muted fw-normal">
-                          (e.g. 500ml, 1kg — press Enter or + to add)
+                          Add multiple weights each with their own price
                         </span>
                       </label>
-                      <WeightTagInput
-                        weights={addWeights}
-                        setWeights={setAddWeights}
+                      <WeightPriceInput
+                        variants={addWeights}
+                        setVariants={setAddWeights}
+                        onFirstVariant={(v) => {
+                          // Automatically fill main price fields for the first variant
+                          setAddValue("product_price", v.price);
+                          setAddValue(
+                            "product_purchase_price",
+                            v.purchase_price,
+                          );
+                          setAddValue("product_del_price", v.del_price);
+                        }}
                       />
                     </div>
 
@@ -1767,17 +1846,27 @@ const ProductInfo = () => {
                       )}
                     </div>
 
-                    {/* Weight Tags */}
+                    {/* Weight Variants */}
                     <div className="col-12">
                       <label className="form-label fw-semibold small">
-                        Weight Variants <span className="text-danger">*</span>{" "}
+                        Weight/Price Variants{" "}
+                        <span className="text-danger">*</span>{" "}
                         <span className="text-muted fw-normal">
-                          (press Enter or + to add)
+                          Manage individual prices for different weights
                         </span>
                       </label>
-                      <WeightTagInput
-                        weights={editWeights}
-                        setWeights={setEditWeights}
+                      <WeightPriceInput
+                        variants={editWeights}
+                        setVariants={setEditWeights}
+                        onFirstVariant={(v) => {
+                          // Sync main fields if they might be empty
+                          setEditValue("product_price", v.price);
+                          setEditValue(
+                            "product_purchase_price",
+                            v.purchase_price,
+                          );
+                          setEditValue("product_del_price", v.del_price);
+                        }}
                       />
                     </div>
 
