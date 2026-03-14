@@ -111,8 +111,10 @@ const RecentOrderTable = ({ RecentOrderTableData = [] }) => {
         <table className="table mb-0">
           <thead>
             <tr>
-              <th>Order ID</th>
+              <th className="ps-4">Order ID</th>
               <th>Customer</th>
+              <th>City</th>
+              <th>Mobile</th>
               <th>Date</th>
               <th>Amount</th>
               <th>Status</th>
@@ -121,7 +123,7 @@ const RecentOrderTable = ({ RecentOrderTableData = [] }) => {
           <tbody>
             {!RecentOrderTableData || RecentOrderTableData.length === 0 ? (
               <tr>
-                <td colSpan="5" className="py-5 text-center">
+                <td colSpan="7" className="py-5 text-center">
                   <div style={{ color: "#94a3b8", fontSize: "13px" }}>
                     <div style={{ fontSize: "32px", marginBottom: "8px" }}>
                       📋
@@ -147,7 +149,7 @@ const RecentOrderTable = ({ RecentOrderTableData = [] }) => {
                 );
                 return (
                   <tr key={index}>
-                    <td>
+                    <td className="ps-4">
                       <span
                         style={{
                           fontWeight: 600,
@@ -155,7 +157,7 @@ const RecentOrderTable = ({ RecentOrderTableData = [] }) => {
                           fontSize: "13px",
                         }}
                       >
-                        #{order?.user_id}
+                        #{order?.id || order?.user_id}
                       </span>
                     </td>
                     <td>
@@ -188,6 +190,12 @@ const RecentOrderTable = ({ RecentOrderTableData = [] }) => {
                           {order?.user_name}
                         </span>
                       </div>
+                    </td>
+                    <td style={{ color: "#64748b", fontSize: "12px" }}>
+                      {order?.user_city || "N/A"}
+                    </td>
+                    <td style={{ color: "#64748b", fontSize: "12px" }}>
+                      {order?.user_mobile_num || "N/A"}
                     </td>
                     <td style={{ color: "#64748b", fontSize: "12px" }}>
                       {new Date(order.date).toLocaleDateString("en-GB")}

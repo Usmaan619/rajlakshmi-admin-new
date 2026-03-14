@@ -13,12 +13,13 @@ import Trend from "../../Assets/Images/home-img/trend.svg";
 import Rupee from "../../Assets/Images/home-img/Rupee.svg";
 import noDataImg from "../../Assets/Images/home-img/flat-design-no-data-illustration.png";
 import Cart from "../../Assets/Images/home-img/shopping-cart.svg";
-import { postData } from "../../Common/APIs/api";
+import { postData, getData } from "../../Common/APIs/api";
 import { DropdownContext } from "../../../Context/DropdownContext";
 
 const Home = () => {
   const { dropdownData } = useContext(DropdownContext);
   const [salesData, setSalesData] = useState();
+  const [totalCustomers, setTotalCustomers] = useState(0);
 
   const getSalesDataByAPI = useCallback(async () => {
     const endpoint = "admin/getAllSales";
@@ -37,21 +38,33 @@ const Home = () => {
     }
   }, [dropdownData]);
 
+  const getCustomerCount = useCallback(async () => {
+    try {
+      const res = await getData("admin/getRajlaxmiUsers?limit=1");
+      if (res?.success) {
+        setTotalCustomers(res.total || 0);
+      }
+    } catch (err) {
+      console.log("Customer fetch error:", err);
+    }
+  }, []);
+
   useEffect(() => {
     getSalesDataByAPI();
-  }, [getSalesDataByAPI]);
+    getCustomerCount();
+  }, [getSalesDataByAPI, getCustomerCount]);
 
   const DashboardCardData = [
     {
       label: "Total Products",
-      count: "1",
+      count: salesData?.totalProducts ?? "0",
       imgSrc: Team,
       cardColor: "bg-light-blue-color",
       circleColor: "dashboard-blue-color",
     },
     {
       label: "Total Sales",
-      count: salesData?.summary?.total_sales ?? "0",
+      count: `₹${salesData?.summary?.total_sales ?? "0"}`,
       imgSrc: Trend,
       cardColor: "bg-light-green-color",
       circleColor: "dashboard-green-color",
@@ -65,10 +78,17 @@ const Home = () => {
     },
     {
       label: "Total Profit",
-      count: salesData?.monthlyProfit ?? "0",
+      count: `₹${salesData?.monthlyProfit ?? "0"}`,
       imgSrc: Rupee,
       cardColor: "bg-light-purple-color",
       circleColor: "dashboard-purple-color",
+    },
+    {
+      label: "Total Customers",
+      count: totalCustomers,
+      imgSrc: Team,
+      cardColor: "bg-light-blue-color",
+      circleColor: "dashboard-blue-color",
     },
   ];
 

@@ -358,6 +358,7 @@ const ProductInfo = () => {
       full_description: "",
       health_benefits: "",
       ingredients: "",
+      product_subtitle: "",
     },
   });
 
@@ -465,6 +466,7 @@ const ProductInfo = () => {
       full_description: p.full_description || "",
       health_benefits: p.health_benefits || "",
       ingredients: p.ingredients || "",
+      product_subtitle: p.product_subtitle || "",
     });
     setShowEdit(true);
   };
@@ -607,6 +609,7 @@ const ProductInfo = () => {
         full_description: data.full_description,
         health_benefits: data.health_benefits,
         ingredients: data.ingredients,
+        product_subtitle: data.product_subtitle,
         // NOTE: product_images intentionally NOT included here.
         // Base64 image strings are too large for JSON PUT body (~750KB+ for 3 images).
         // Images are managed exclusively via /replace-image and /add-images endpoints.
@@ -1460,6 +1463,18 @@ const ProductInfo = () => {
                     {/* Descriptions */}
                     <div className="col-12">
                       <label className="form-label fw-semibold small">
+                        Product Subtitle
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g. Naturally grown, protein-rich organic toor dal..."
+                        {...rAdd("product_subtitle")}
+                      />
+                    </div>
+
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small">
                         Short Description
                       </label>
                       <textarea
@@ -2005,6 +2020,18 @@ const ProductInfo = () => {
                     </div>
 
                     {/* Descriptions */}
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small">
+                        Product Subtitle
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Subtitle..."
+                        {...rEdit("product_subtitle")}
+                      />
+                    </div>
+
                     <div className="col-12">
                       <label className="form-label fw-semibold small">
                         Short Description
