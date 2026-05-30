@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Sidebar from "../../Common/SideBar/sidebar";
 import Navbar from "../../Common/Navbar/navbar";
 import {
@@ -10,6 +10,7 @@ import {
 } from "../../Common/APIs/api";
 import { toastSuccess, toastError } from "../../../Services/toast.service";
 import { useForm } from "react-hook-form";
+import ImageCropperModal from "../../Common/ImageCropper/ImageCropperModal";
 
 /* ── helpers ──────────────────────────────────────────────────────────────── */
 const parseImages = (val) => {
@@ -47,19 +48,101 @@ const parseWeight = (val) => {
 };
 
 /* ── WeightTagInput: dynamic weight chips ─────────────────────────────────── */
+const getMarginPercentage = (weightStr) => {
+  if (!weightStr) return 0;
+  const lowerStr = weightStr.toLowerCase().trim();
+
+  let value = parseFloat(lowerStr);
+  if (isNaN(value)) return 0;
+
+  if (lowerStr.includes("g") && !lowerStr.includes("kg")) value = value / 1000;
+
+  if (value <= 0.5) return 30; // 500g sample
+  if (value <= 1) return 30; // 1kg (user didn't specify, keeping a safe default or matching 10kg logic)
+  if (value <= 10) return 20; // 10kg
+  if (value <= 30) return 18; // 30kg
+  if (value <= 50) return 15; // 50kg
+  if (value <= 100) return 14; // 100kg
+  if (value <= 500) return 13; // 500kg
+  return 12; // 1000kg+
+};
+
+const getDisplayWeight = (w) => {
+  if (!w) return "";
+  const lower = w.toLowerCase().trim().replace(/\s+/g, "");
+  if (lower === "500gm" || lower === "500g") return "500gm sample";
+  if (lower === "1000kg") return "1000kg +";
+  return w;
+};
+
+const calculateRatePerKg = (weightStr, price) => {
+  if (!weightStr || !price) return "0";
+  const lowerStr = weightStr.toLowerCase().trim();
+  let value = parseFloat(lowerStr);
+  if (isNaN(value) || value <= 0) return "0";
+
+  // Convert grams to kg for rate calculation
+  if (lowerStr.includes("g") && !lowerStr.includes("kg")) {
+    value = value / 1000;
+  }
+
+  return (price / value).toFixed(2);
+};
+
+const calculateDiscount = (mrp, selling) => {
+  const m = parseFloat(mrp);
+  const s = parseFloat(selling);
+  if (!m || !s || m <= s) return 0;
+  return Math.round(((m - s) / m) * 100);
+};
+
 const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
   const [weight, setWeight] = useState("");
   const [price, setPrice] = useState("");
   const [purchasePrice, setPurchasePrice] = useState("");
   const [delPrice, setDelPrice] = useState("");
 
+  useEffect(() => {
+    if (weight && purchasePrice) {
+      const margin = getMarginPercentage(weight);
+      if (margin > 0) {
+        const pPrice = parseFloat(purchasePrice) || 0;
+
+        // Selling Price Calculation (Based on Weight Margin)
+        const calculatedSellingPrice = pPrice + (pPrice * margin) / 100;
+        setPrice(Math.round(calculatedSellingPrice).toString());
+
+        // MRP Calculation (Setting it 20% higher than Selling Price to show discount)
+        const calculatedMRP =
+          calculatedSellingPrice + calculatedSellingPrice * 0.2;
+        setDelPrice(Math.round(calculatedMRP).toString());
+      }
+    }
+  }, [weight, purchasePrice]);
+
+  const getWeightVal = (w) => {
+    if (!w) return 0;
+    const lower = w.toLowerCase().trim();
+    let val = parseFloat(lower);
+    if (isNaN(val)) return 0;
+    if (lower.includes("g") && !lower.includes("kg")) val = val / 1000;
+    return val;
+  };
+
+  const finalPrice = Math.round(
+    (parseFloat(price) || 0) * (getWeightVal(weight) || 1),
+  );
+
   const addVariant = () => {
     if (!weight.trim()) return;
+    const wVal = getWeightVal(weight) || 1;
     const newVariant = {
       weight: weight.trim(),
-      price: Number(price) || 0,
-      purchase_price: Number(purchasePrice) || 0,
-      del_price: Number(delPrice) || 0,
+      price: finalPrice || 0, // Total Selling Price
+      del_price: Math.round((parseFloat(delPrice) || 0) * wVal), // Total MRP
+      purchase_price: Number(purchasePrice) || 0, // Purchase Rate (Per kg)
+      selling_rate: Number(price) || 0, // Selling Rate (Per kg)
+      mrp_rate: Number(delPrice) || 0, // MRP Rate (Per kg)
     };
     const updated = [...variants, newVariant];
     setVariants(updated);
@@ -78,98 +161,274 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
   const removeVariant = (i) =>
     setVariants(variants.filter((_, idx) => idx !== i));
 
+  const updateVariant = (index, field, value) => {
+    const updated = [...variants];
+    const v = { ...updated[index], [field]: value };
+
+    // If rate or purchase_price changed, we might want to update final price?
+    // Actually, let's keep it simple: price is always the "Final Price" saved to DB.
+    // If they edit "selling_rate" (which we'll use in the UI), it updates price.
+
+    updated[index] = v;
+    setVariants(updated);
+  };
+
+  const updateVariantRate = (index, newRate) => {
+    const updated = [...variants];
+    const v = updated[index];
+    const weightVal = getWeightVal(v.weight) || 1;
+    updated[index] = {
+      ...v,
+      price: Math.round(newRate * weightVal),
+      selling_rate: newRate,
+    };
+    setVariants(updated);
+  };
+
+  const updateVariantMRPRate = (index, newMRP) => {
+    const updated = [...variants];
+    const v = updated[index];
+    const weightVal = getWeightVal(v.weight) || 1;
+    updated[index] = { 
+      ...v, 
+      del_price: Math.round(newMRP * weightVal),
+      mrp_rate: newMRP
+    };
+    setVariants(updated);
+  };
+
   return (
     <div
-      className="p-3 rounded-3"
-      style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
+      className="p-4 rounded-4 shadow-sm"
+      style={{
+        background: "#ffffff",
+        border: "1px solid #eef2f6",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
+      }}
     >
-      <div className="row g-2 mb-3 align-items-end">
+      <div className="row g-3 mb-4 align-items-end">
         <div className="col-md-3">
-          <label className="form-label small fw-bold mb-1">Weight</label>
-          <input
-            type="text"
-            className="form-control form-control-sm"
-            placeholder="e.g. 500gm"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-          />
+          <label className="form-label small fw-bold text-slate-700 mb-1">
+            Weight
+          </label>
+          <div className="input-group input-group-sm shadow-xs">
+            <span className="input-group-text bg-light border-end-0">
+              <i className="bi bi-box-seam"></i>
+            </span>
+            <input
+              type="text"
+              className="form-control form-control-sm border-start-0"
+              placeholder="e.g. 10kg"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              style={{ borderRadius: "0 8px 8px 0" }}
+            />
+          </div>
         </div>
         <div className="col-md-2">
-          <label className="form-label small fw-bold mb-1">Purchase ₹</label>
+          <label className="form-label small fw-bold text-slate-700 mb-1">
+            Purchase ₹
+          </label>
           <input
             type="number"
-            className="form-control form-control-sm"
+            className="form-control form-control-sm shadow-xs"
             placeholder="0"
             value={purchasePrice}
             onChange={(e) => setPurchasePrice(e.target.value)}
+            style={{ borderRadius: "8px" }}
           />
         </div>
         <div className="col-md-2">
-          <label className="form-label small fw-bold mb-1">Selling ₹</label>
+          <label className="form-label small fw-bold text-slate-700 mb-1">
+            Rate ₹
+          </label>
           <input
             type="number"
-            className="form-control form-control-sm"
+            className="form-control form-control-sm shadow-xs"
             placeholder="0"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
+            style={{ borderRadius: "8px" }}
           />
         </div>
         <div className="col-md-2">
-          <label className="form-label small fw-bold mb-1">MRP ₹</label>
+          <label className="form-label small fw-bold text-slate-700 mb-1">
+            MRP ₹
+          </label>
           <input
             type="number"
-            className="form-control form-control-sm"
+            className="form-control form-control-sm shadow-xs"
             placeholder="0"
             value={delPrice}
             onChange={(e) => setDelPrice(e.target.value)}
+            style={{ borderRadius: "8px" }}
           />
         </div>
         <div className="col-md-3">
-          <button
-            type="button"
-            className="btn btn-primary btn-sm w-100"
-            style={{ height: "31px", fontWeight: 600 }}
-            onClick={addVariant}
-          >
-            Add Variant
-          </button>
+          <label className="form-label small fw-bold text-indigo-600 mb-1">
+            Final Price ₹
+          </label>
+          <div className="d-flex gap-2">
+            <input
+              type="number"
+              className="form-control form-control-sm border-indigo-200 bg-indigo-50 fw-bold text-indigo-700"
+              placeholder="0"
+              value={finalPrice}
+              readOnly
+              style={{ borderRadius: "8px" }}
+            />
+            <button
+              type="button"
+              className="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1 shadow-sm"
+              style={{
+                height: "31px",
+                fontWeight: 600,
+                borderRadius: "8px",
+                background: "linear-gradient(135deg,#6366f1,#4f46e5)",
+                border: "none",
+              }}
+              onClick={addVariant}
+            >
+              <i className="bi bi-plus-circle"></i> Add
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="table-responsive rounded-2 overflow-hidden border">
+      <div className="table-responsive rounded-3 overflow-hidden border shadow-xs">
         <table className="table table-sm table-hover mb-0 align-middle">
-          <thead className="table-light">
-            <tr style={{ fontSize: "11px", textTransform: "uppercase" }}>
-              <th className="ps-3">Weight</th>
-              <th>Purchase</th>
-              <th>Selling</th>
-              <th>MRP</th>
-              <th className="text-end pe-3">Action</th>
+          <thead style={{ background: "#1e293b", color: "#f8fafc" }}>
+            <tr
+              style={{
+                fontSize: "11px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
+              <th className="ps-3 py-2 border-0">Weight</th>
+              <th className="py-2 border-0">Purchase</th>
+              <th className="py-2 border-0">Rate ₹</th>
+              <th className="py-2 border-0">MRP ₹</th>
+              <th className="py-2 border-0 text-info">Final Price ₹</th>
+              <th className="py-2 border-0 text-center">Save%</th>
+              <th className="py-2 border-0">Rate/kg</th>
+              <th className="text-end pe-3 py-2 border-0">Action</th>
             </tr>
           </thead>
           <tbody style={{ fontSize: "12px" }}>
             {variants.map((v, i) => (
               <tr key={i}>
-                <td className="ps-3 fw-bold text-primary">{v.weight}</td>
-                <td>₹{v.purchase_price}</td>
-                <td className="fw-bold text-success">₹{v.price}</td>
-                <td className="text-muted text-decoration-line-through">
-                  ₹{v.del_price}
+                <td className="ps-3 fw-bold text-primary">
+                  {getDisplayWeight(v.weight)}
+                </td>
+                <td>
+                  <div
+                    className="input-group input-group-sm"
+                    style={{ width: "80px" }}
+                  >
+                    <span className="input-group-text border-0 bg-transparent p-0 text-muted">
+                      ₹
+                    </span>
+                    <input
+                      type="number"
+                      className="form-control form-control-sm border-0 bg-transparent p-0 ps-1"
+                      value={v.purchase_price}
+                      onChange={(e) =>
+                        updateVariant(
+                          i,
+                          "purchase_price",
+                          Number(e.target.value),
+                        )
+                      }
+                    />
+                  </div>
+                </td>
+                <td>
+                  <div
+                    className="input-group input-group-sm"
+                    style={{ width: "80px" }}
+                  >
+                    <span className="input-group-text border-0 bg-transparent p-0 text-muted">
+                      ₹
+                    </span>
+                    <input
+                      type="number"
+                      className="form-control form-control-sm border-0 bg-transparent p-0 ps-1 fw-bold text-success"
+                      value={Math.round(
+                        v.price / (getWeightVal(v.weight) || 1),
+                      )}
+                      onChange={(e) =>
+                        updateVariantRate(i, Number(e.target.value))
+                      }
+                    />
+                  </div>
+                </td>
+                <td>
+                  <div
+                    className="input-group input-group-sm"
+                    style={{ width: "80px" }}
+                  >
+                    <span className="input-group-text border-0 bg-transparent p-0 text-muted">
+                      ₹
+                    </span>
+                    <input
+                      type="number"
+                      className="form-control form-control-sm border-0 bg-transparent p-0 ps-1 text-muted"
+                      value={v.mrp_rate || Math.round(v.del_price / (getWeightVal(v.weight) || 1))}
+                      onChange={(e) =>
+                        updateVariantMRPRate(i, Number(e.target.value))
+                      }
+                    />
+                  </div>
+                </td>
+                <td>
+                  <div
+                    className="input-group input-group-sm"
+                    style={{ width: "90px" }}
+                  >
+                    <span className="input-group-text border-0 bg-transparent p-0 text-indigo-600">
+                      ₹
+                    </span>
+                    <input
+                      type="number"
+                      className="form-control form-control-sm border-0 bg-transparent p-0 ps-1 fw-bold text-indigo-600"
+                      value={v.price}
+                      onChange={(e) =>
+                        updateVariant(i, "price", Number(e.target.value))
+                      }
+                    />
+                  </div>
+                </td>
+                <td className="text-center">
+                  <span
+                    className="badge bg-soft-success text-success border border-success-subtle rounded-pill px-2 py-1"
+                    style={{ fontSize: "10px" }}
+                  >
+                    {calculateDiscount(v.del_price, v.price)}% Off
+                  </span>
+                </td>
+                <td className="text-muted small">
+                  ₹{calculateRatePerKg(v.weight, v.price)} / kg
                 </td>
                 <td className="text-end pe-3">
                   <button
                     type="button"
-                    className="btn btn-link link-danger btn-sm p-0"
+                    className="btn btn-outline-danger btn-sm border-0 rounded-circle"
+                    style={{ width: "28px", height: "28px", padding: 0 }}
                     onClick={() => removeVariant(i)}
+                    title="Remove variant"
                   >
-                    remove
+                    <i
+                      className="bi bi-trash3-fill"
+                      style={{ fontSize: "12px" }}
+                    ></i>
                   </button>
                 </td>
               </tr>
             ))}
             {variants.length === 0 && (
               <tr>
-                <td colSpan="5" className="text-center py-3 text-muted">
+                <td colSpan="7" className="text-center py-3 text-muted">
                   No variants added. Please add at least one.
                 </td>
               </tr>
@@ -320,6 +579,8 @@ const ProductInfo = () => {
   const [addImages, setAddImages] = useState([]);
   const [addPreviews, setAddPreviews] = useState([]);
   const [addWeights, setAddWeights] = useState([]); // weight array for Add
+  const [addVideo, setAddVideo] = useState(null);
+  const [addVideoPreview, setAddVideoPreview] = useState(null);
 
   /* ── Edit Modal ────────────────────────────────────────────────────────── */
   const [showEdit, setShowEdit] = useState(false);
@@ -330,6 +591,16 @@ const ProductInfo = () => {
   const [moreImages, setMoreImages] = useState([]); // files for /add-images
   const [morePreviews, setMorePreviews] = useState([]);
   const [imgUploading, setImgUploading] = useState(false);
+  const [videoUploading, setVideoUploading] = useState(false);
+
+  /* ── Image Cropper State ───────────────────────────────────────────────── */
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropperImageSrc, setCropperImageSrc] = useState(null);
+  const [cropperFileName, setCropperFileName] = useState("");
+  const [cropperMode, setCropperMode] = useState(null);
+  // cropperMode: { type: 'add', index: number }
+  //            | { type: 'edit-more', index: number }
+  //            | { type: 'edit-replace', index: number }
 
   /* ── Delete confirm state ──────────────────────────────────────────────── */
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -358,7 +629,12 @@ const ProductInfo = () => {
       full_description: "",
       health_benefits: "",
       ingredients: "",
+      why_choose: "",
+      storage_instructions: "",
+      common_uses: "",
       product_subtitle: "",
+      product_video: "",
+      gst_percent: 0,
     },
   });
 
@@ -432,7 +708,7 @@ const ProductInfo = () => {
       if (res?.success) {
         toastSuccess(`"${deleteTarget.product_name}" deleted!`);
         setDeleteTarget(null);
-        fetchProducts();
+        fetchProducts(currentPage, searchTerm, selectedCategory);
       } else {
         toastError(res?.message || "Failed to delete.");
       }
@@ -466,7 +742,13 @@ const ProductInfo = () => {
       full_description: p.full_description || "",
       health_benefits: p.health_benefits || "",
       ingredients: p.ingredients || "",
+      why_choose: p.why_choose || "",
+      storage_instructions: p.storage_instructions || "",
+      common_uses: p.common_uses || "",
       product_subtitle: p.product_subtitle || "",
+      product_video: p.product_video || "",
+      youtube_url: (p.product_video && (p.product_video.includes("youtube.com") || p.product_video.includes("youtu.be"))) ? p.product_video : "",
+      gst_percent: p.gst_percent || 0,
     });
     setShowEdit(true);
   };
@@ -480,6 +762,81 @@ const ProductInfo = () => {
   const removeAddPreview = (i) => {
     setAddImages((p) => p.filter((_, idx) => idx !== i));
     setAddPreviews((p) => p.filter((_, idx) => idx !== i));
+  };
+
+  /* ── Cropper helpers ─────────────────────────────────────────────────── */
+  const openCropperForAdd = (index) => {
+    const file = addImages[index];
+    if (!file) return;
+    setCropperImageSrc(URL.createObjectURL(file));
+    setCropperFileName(file.name);
+    setCropperMode({ type: "add", index });
+    setCropperOpen(true);
+  };
+
+  const openCropperForEditMore = (index) => {
+    const file = moreImages[index];
+    if (!file) return;
+    setCropperImageSrc(URL.createObjectURL(file));
+    setCropperFileName(file.name);
+    setCropperMode({ type: "edit-more", index });
+    setCropperOpen(true);
+  };
+
+  const openCropperForEditReplace = (index) => {
+    // Open file picker, then open cropper
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      setCropperImageSrc(URL.createObjectURL(file));
+      setCropperFileName(file.name);
+      setCropperMode({ type: "edit-replace", index, originalFile: file });
+      setCropperOpen(true);
+    };
+    input.click();
+  };
+
+  const handleCropDone = (croppedFile) => {
+    if (!cropperMode) return;
+    if (cropperMode.type === "add") {
+      // Replace the image at index in addImages with the cropped version
+      setAddImages((prev) => {
+        const updated = [...prev];
+        updated[cropperMode.index] = croppedFile;
+        return updated;
+      });
+      setAddPreviews((prev) => {
+        const updated = [...prev];
+        updated[cropperMode.index] = URL.createObjectURL(croppedFile);
+        return updated;
+      });
+    } else if (cropperMode.type === "edit-more") {
+      setMoreImages((prev) => {
+        const updated = [...prev];
+        updated[cropperMode.index] = croppedFile;
+        return updated;
+      });
+      setMorePreviews((prev) => {
+        const updated = [...prev];
+        updated[cropperMode.index] = URL.createObjectURL(croppedFile);
+        return updated;
+      });
+    } else if (cropperMode.type === "edit-replace") {
+      // Directly replace the image on the server with the cropped version
+      handleReplaceImage(cropperMode.index, croppedFile);
+    }
+    setCropperOpen(false);
+    setCropperImageSrc(null);
+    setCropperMode(null);
+  };
+
+  const handleCropperClose = () => {
+    setCropperOpen(false);
+    setCropperImageSrc(null);
+    setCropperMode(null);
   };
 
   /* ── Edit: replace single image (POST /replace-image) ────────────────── */
@@ -506,6 +863,43 @@ const ProductInfo = () => {
     } catch (err) {
       console.log("Replace error:", err);
       toastError("Failed to replace image.");
+    } finally {
+      setImgUploading(false);
+    }
+  };
+
+  /* ── Edit: remove single image (POST /delete-image) ───────────────────── */
+  const handleRemoveImage = async (removeIndex) => {
+    const currentImages = parseImages(editProduct.product_images);
+    if (currentImages.length <= 1) {
+      toastError("A product must have at least one image.");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to remove this image?")) {
+      return;
+    }
+
+    setImgUploading(true);
+    try {
+      const res = await postData("products/delete-image", {
+        id: editProduct.id,
+        delete_index: removeIndex,
+      });
+      if (res?.data?.success || res?.success || res?.status === 200) {
+        toastSuccess("Image removed!");
+        await fetchProducts();
+        setEditProduct((prev) => {
+          const imgs = parseImages(prev.product_images);
+          imgs.splice(removeIndex, 1);
+          return { ...prev, product_images: imgs };
+        });
+      } else {
+        toastError(res?.data?.error || res?.data?.message || "Failed to remove image.");
+      }
+    } catch (err) {
+      console.log("Remove image error:", err);
+      toastError("Failed to remove image.");
     } finally {
       setImgUploading(false);
     }
@@ -569,6 +963,8 @@ const ProductInfo = () => {
       });
       fd.append("product_weight", JSON.stringify(addWeights));
       addImages.forEach((f) => fd.append("images", f));
+      if (addVideo) fd.append("video", addVideo);
+      if (data.youtube_url) fd.append("product_video", data.youtube_url);
 
       const res = await postFormData("products/add-product", fd);
       if (res?.data?.success) {
@@ -578,6 +974,8 @@ const ProductInfo = () => {
         setAddImages([]);
         setAddPreviews([]);
         setAddWeights([]);
+        setAddVideo(null);
+        setAddVideoPreview(null);
         fetchProducts();
       }
     } catch (err) {
@@ -609,7 +1007,12 @@ const ProductInfo = () => {
         full_description: data.full_description,
         health_benefits: data.health_benefits,
         ingredients: data.ingredients,
+        why_choose: data.why_choose,
+        storage_instructions: data.storage_instructions,
+        common_uses: data.common_uses,
         product_subtitle: data.product_subtitle,
+        gst_percent: data.gst_percent || 0,
+        product_video: data.youtube_url || editProduct.product_video,
         // NOTE: product_images intentionally NOT included here.
         // Base64 image strings are too large for JSON PUT body (~750KB+ for 3 images).
         // Images are managed exclusively via /replace-image and /add-images endpoints.
@@ -627,6 +1030,38 @@ const ProductInfo = () => {
     } catch (err) {
       console.log("Edit error:", err);
       toastError(err?.message || "Failed to update product.");
+    }
+  };
+
+  const onAddVideoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAddVideo(file);
+      setAddVideoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleUpdateVideo = async (file) => {
+    if (!file) return;
+    setVideoUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("id", editProduct.id);
+      fd.append("video", file);
+      const res = await postFormData("products/replace-video", fd);
+      if (res?.data?.success) {
+        toastSuccess("Video updated!");
+        await fetchProducts();
+        setEditProduct((prev) => ({
+          ...prev,
+          product_video: res.data.video_url,
+        }));
+      }
+    } catch (err) {
+      console.log("Video update error:", err);
+      toastError("Failed to update video.");
+    } finally {
+      setVideoUploading(false);
     }
   };
 
@@ -874,6 +1309,17 @@ const ProductInfo = () => {
                               border: "none",
                             }}
                           >
+                            GST %
+                          </th>
+                          <th
+                            style={{
+                              fontWeight: 600,
+                              fontSize: "12px",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              border: "none",
+                            }}
+                          >
                             Stock
                           </th>
                           <th
@@ -983,6 +1429,29 @@ const ProductInfo = () => {
                               }}
                             >
                               ₹{p.product_del_price}
+                            </td>
+                            <td>
+                              {p.gst_percent && Number(p.gst_percent) > 0 ? (
+                                <span
+                                  style={{
+                                    background: "rgba(245, 158, 11, 0.1)",
+                                    color: "#d97706",
+                                    fontSize: "11px",
+                                    fontWeight: 600,
+                                    padding: "4px 10px",
+                                    borderRadius: "20px",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {Number(p.gst_percent).toFixed(0)}%
+                                </span>
+                              ) : (
+                                <span
+                                  style={{ color: "#94a3b8", fontSize: "12px" }}
+                                >
+                                  —
+                                </span>
+                              )}
                             </td>
                             <td>
                               <span
@@ -1368,7 +1837,7 @@ const ProductInfo = () => {
                     </div>
 
                     {/* MRP */}
-                    <div className="col-md-4">
+                    <div className="col-md-3">
                       <label className="form-label fw-semibold small">
                         MRP (₹) <span className="text-danger">*</span>
                       </label>
@@ -1383,11 +1852,30 @@ const ProductInfo = () => {
                             min: { value: 0, message: "≥ 0" },
                           })}
                         />
-                        {eAdd.product_del_price && (
-                          <div className="invalid-feedback">
-                            {eAdd.product_del_price.message}
-                          </div>
-                        )}
+                      </div>
+                      {eAdd.product_del_price && (
+                        <div className="invalid-feedback d-block">
+                          {eAdd.product_del_price.message}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* GST */}
+                    <div className="col-md-3">
+                      <label className="form-label fw-semibold small">
+                        GST (%)
+                      </label>
+                      <div className="input-group">
+                        <input
+                          type="number"
+                          className="form-control"
+                          placeholder="0"
+                          {...rAdd("gst_percent", {
+                            min: { value: 0, message: "≥ 0" },
+                            max: { value: 100, message: "≤ 100" },
+                          })}
+                        />
+                        <span className="input-group-text">%</span>
                       </div>
                     </div>
 
@@ -1521,59 +2009,335 @@ const ProductInfo = () => {
                       ></textarea>
                     </div>
 
-                    {/* Images */}
-                    <div className="col-12">
+                    <div className="col-md-6">
                       <label className="form-label fw-semibold small">
-                        Product Images <span className="text-danger">*</span>{" "}
-                        <span className="text-muted fw-normal">
-                          (At least 1)
+                        Why Choose This Product? (Key Features)
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="e.g. Certified Organic Quality&#10;Naturally Grown Without Harmful Chemicals&#10;Unpolished for Better Nutrition"
+                        {...rAdd("why_choose")}
+                      ></textarea>
+                    </div>
+
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold small">
+                        Storage Instructions
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="e.g. Store in a cool, dry place away from moisture..."
+                        {...rAdd("storage_instructions")}
+                      ></textarea>
+                    </div>
+
+                    <div className="col-md-12">
+                      <label className="form-label fw-semibold small">
+                        Common Uses
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="e.g. Dal Tadka&#10;Dal Fry&#10;Sambhar&#10;Khichdi"
+                        {...rAdd("common_uses")}
+                      ></textarea>
+                    </div>
+
+                    {/* Images — IndiaMart-style 9:16 Portrait Grid */}
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small d-flex align-items-center gap-2">
+                        <i className="bi bi-images text-primary"></i>
+                        Product Images <span className="text-danger">*</span>
+                        <span
+                          className="ms-1 px-2 py-0"
+                          style={{
+                            fontSize: 10,
+                            background: "rgba(99,102,241,0.1)",
+                            color: "#6366f1",
+                            borderRadius: 20,
+                            fontWeight: 600,
+                            border: "1px solid rgba(99,102,241,0.2)",
+                          }}
+                        >
+                          9:16 Portrait
                         </span>
+                      </label>
+
+                      {/* Upload trigger area */}
+                      <label
+                        htmlFor="addImgInput"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 8,
+                          padding: "20px 16px",
+                          border: "2px dashed #c4b5fd",
+                          borderRadius: 14,
+                          background:
+                            "linear-gradient(135deg, #f8f5ff, #ede9fe)",
+                          cursor: "pointer",
+                          marginBottom: 14,
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: "50%",
+                            background: "rgba(99,102,241,0.12)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <i
+                            className="bi bi-cloud-arrow-up"
+                            style={{ fontSize: 22, color: "#6366f1" }}
+                          ></i>
+                        </div>
+                        <div className="text-center">
+                          <div
+                            style={{
+                              fontWeight: 700,
+                              fontSize: 13,
+                              color: "#4f46e5",
+                            }}
+                          >
+                            Click to Upload Photos
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: "#94a3b8",
+                              marginTop: 2,
+                            }}
+                          >
+                            Best in 9:16 portrait ratio (e.g. 900×1600px) · JPG,
+                            PNG
+                          </div>
+                        </div>
+                        <input
+                          id="addImgInput"
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          style={{ display: "none" }}
+                          onChange={onAddImageChange}
+                        />
+                      </label>
+
+                      {/* 9:16 Portrait grid previews */}
+                      {addPreviews.length > 0 && (
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns:
+                              "repeat(auto-fill, minmax(110px, 1fr))",
+                            gap: 12,
+                          }}
+                        >
+                          {addPreviews.map((src, i) => (
+                            <div key={i}>
+                              {/* 9:16 portrait card */}
+                              <div
+                                style={{
+                                  position: "relative",
+                                  borderRadius: 10,
+                                  overflow: "hidden",
+                                  border:
+                                    i === 0
+                                      ? "2.5px solid #6366f1"
+                                      : "2px solid #e2e8f0",
+                                  boxShadow:
+                                    i === 0
+                                      ? "0 4px 16px rgba(99,102,241,0.25)"
+                                      : "0 2px 8px rgba(0,0,0,0.08)",
+                                  aspectRatio: "9/16",
+                                  background: "#1a1a2e",
+                                }}
+                              >
+                                <img
+                                  src={src}
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                    display: "block",
+                                  }}
+                                  alt={`Product image ${i + 1}`}
+                                />
+                                {/* Cover badge on first image */}
+                                {i === 0 && (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      top: 6,
+                                      left: 6,
+                                      background: "#6366f1",
+                                      color: "#fff",
+                                      fontSize: 9,
+                                      fontWeight: 700,
+                                      padding: "2px 6px",
+                                      borderRadius: 4,
+                                      letterSpacing: "0.04em",
+                                      textTransform: "uppercase",
+                                    }}
+                                  >
+                                    Cover
+                                  </div>
+                                )}
+                                {/* Image number badge */}
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    top: 6,
+                                    right: 6,
+                                    background: "rgba(0,0,0,0.55)",
+                                    color: "#fff",
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    width: 18,
+                                    height: 18,
+                                    borderRadius: "50%",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                  }}
+                                >
+                                  {i + 1}
+                                </div>
+                              </div>
+                              {/* Action buttons */}
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: 4,
+                                  marginTop: 6,
+                                }}
+                              >
+                                <button
+                                  type="button"
+                                  style={{
+                                    flex: 1,
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    background:
+                                      "linear-gradient(135deg, #667eea, #764ba2)",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: 6,
+                                    padding: "4px 0",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 3,
+                                  }}
+                                  onClick={() => openCropperForAdd(i)}
+                                >
+                                  <i className="bi bi-crop"></i> Crop
+                                </button>
+                                <button
+                                  type="button"
+                                  style={{
+                                    flex: 1,
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    background: "#fee2e2",
+                                    color: "#dc2626",
+                                    border: "1px solid #fca5a5",
+                                    borderRadius: 6,
+                                    padding: "4px 0",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                  }}
+                                  onClick={() => removeAddPreview(i)}
+                                >
+                                  <i className="bi bi-trash"></i>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {addImages.length === 0 && (
+                        <div
+                          className="small mt-2 d-flex align-items-center gap-2"
+                          style={{
+                            color: "#b45309",
+                            background: "#fffbeb",
+                            border: "1px solid #fde68a",
+                            borderRadius: 8,
+                            padding: "8px 12px",
+                          }}
+                        >
+                          <i className="bi bi-exclamation-triangle-fill"></i>
+                          Please upload at least one product image.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Video Upload Section */}
+                    <div className="col-12 mt-3">
+                      <label className="form-label fw-semibold small">
+                        Product Video / YouTube Shorts
                       </label>
                       <div
                         className="p-3 rounded-3"
                         style={{
-                          border: "2px dashed #c4b5fd",
-                          background: "#f8f5ff",
+                          border: "2px dashed #94a3b8",
+                          background: "#f1f5f9",
                         }}
                       >
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/*"
-                          className="form-control mb-2"
-                          onChange={onAddImageChange}
-                        />
-                        {addPreviews.length > 0 && (
-                          <div className="d-flex flex-wrap gap-2 mt-2">
-                            {addPreviews.map((src, i) => (
-                              <div key={i} style={{ width: 100 }}>
-                                <img
-                                  src={src}
-                                  className="img-thumbnail"
-                                  style={{
-                                    width: "100%",
-                                    height: 120,
-                                    objectFit: "cover",
-                                    borderRadius: "8px",
-                                  }}
-                                  alt={`Product thumbnail ${i + 1}`}
-                                />
-                                <button
-                                  type="button"
-                                  className="btn btn-danger btn-sm w-100 mt-1 py-0"
-                                  style={{ fontSize: 11 }}
-                                  onClick={() => removeAddPreview(i)}
-                                >
-                                  <i className="bi bi-trash"></i> Remove
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {addImages.length === 0 && (
-                          <div className="alert alert-warning mt-2 py-1 mb-0 small">
-                            <i className="bi bi-exclamation-triangle me-1"></i>
-                            Please add at least one image.
+                        <div className="mb-3">
+                          <label className="form-label small text-muted">Upload Video File</label>
+                          <input
+                            type="file"
+                            accept="video/*"
+                            className="form-control form-control-sm mb-2"
+                            onChange={onAddVideoChange}
+                          />
+                        </div>
+                        
+                        <div className="mb-2">
+                          <label className="form-label small text-muted">Or YouTube Shorts/Video URL</label>
+                          <input 
+                            type="text" 
+                            className="form-control form-control-sm" 
+                            placeholder="https://www.youtube.com/shorts/..."
+                            {...rAdd("youtube_url")}
+                          />
+                        </div>
+
+                        {addVideoPreview && (
+                          <div className="mt-2 text-center border-top pt-2">
+                            <video
+                              src={addVideoPreview}
+                              controls
+                              style={{
+                                width: "100%",
+                                maxHeight: "200px",
+                                borderRadius: "8px",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm mt-1"
+                              onClick={() => {
+                                setAddVideo(null);
+                                setAddVideoPreview(null);
+                              }}
+                            >
+                              <i className="bi bi-trash"></i> Remove File
+                            </button>
                           </div>
                         )}
                       </div>
@@ -1691,34 +2455,107 @@ const ProductInfo = () => {
                     <i className="bi bi-images me-2"></i>Product Images
                   </h6>
 
-                  {/* Current images with Replace button */}
+                  {/* Current images with Replace & Crop buttons */}
                   {parseImages(editProduct.product_images).length > 0 && (
                     <div className="mb-3">
                       <p className="small text-muted fw-semibold mb-2">
-                        Current Images — Click Replace to swap one:
+                        Current Images — Replace (with crop) or swap directly:
                       </p>
                       <div className="d-flex flex-wrap gap-3">
                         {parseImages(editProduct.product_images).map(
                           (img, imgIdx) => (
-                            <div key={imgIdx} style={{ width: 100 }}>
-                              <img
-                                src={img}
-                                className="img-thumbnail"
+                            <div key={imgIdx} style={{ width: 110 }}>
+                              <div
                                 style={{
-                                  width: "100%",
-                                  height: 120,
-                                  objectFit: "cover",
-                                  borderRadius: "8px",
+                                  position: "relative",
+                                  borderRadius: 10,
+                                  overflow: "hidden",
+                                  border: "2px solid #e2e8f0",
+                                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                                 }}
-                                alt={`Product thumbnail ${imgIdx + 1}`}
-                              />
+                              >
+                                <img
+                                  src={img}
+                                  style={{
+                                    width: "100%",
+                                    height: 120,
+                                    objectFit: "cover",
+                                    display: "block",
+                                  }}
+                                  alt={`Product thumbnail ${imgIdx + 1}`}
+                                />
+                                <span
+                                  style={{
+                                    position: "absolute",
+                                    top: 4,
+                                    left: 4,
+                                    background: "rgba(0,0,0,0.6)",
+                                    color: "#fff",
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    padding: "1px 6px",
+                                    borderRadius: 6,
+                                  }}
+                                >
+                                  #{imgIdx + 1}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="btn btn-danger p-0 d-flex align-items-center justify-content-center"
+                                  style={{
+                                    position: "absolute",
+                                    top: 4,
+                                    right: 4,
+                                    width: 22,
+                                    height: 22,
+                                    borderRadius: "50%",
+                                    zIndex: 10,
+                                    boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
+                                    border: "none",
+                                    background: "#dc2626",
+                                    color: "#fff",
+                                  }}
+                                  disabled={imgUploading}
+                                  onClick={() => handleRemoveImage(imgIdx)}
+                                  title="Remove image"
+                                >
+                                  <i className="bi bi-trash" style={{ fontSize: 11 }}></i>
+                                </button>
+                              </div>
+                              <div className="d-flex gap-1 mt-1">
+                                <button
+                                  type="button"
+                                  className="btn btn-sm flex-fill py-0"
+                                  style={{
+                                    fontSize: 10,
+                                    fontWeight: 600,
+                                    background:
+                                      "linear-gradient(135deg, #667eea, #764ba2)",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: 6,
+                                  }}
+                                  disabled={imgUploading}
+                                  onClick={() =>
+                                    openCropperForEditReplace(imgIdx)
+                                  }
+                                  title="Replace with cropped image"
+                                >
+                                  <i className="bi bi-crop me-1"></i>Crop &
+                                  Replace
+                                </button>
+                              </div>
                               <label
                                 htmlFor={`replace-img-${imgIdx}`}
-                                className="btn btn-sm btn-outline-danger w-100 mt-1 py-0"
-                                style={{ fontSize: 11, cursor: "pointer" }}
+                                className="btn btn-sm btn-outline-secondary w-100 mt-1 py-0"
+                                style={{
+                                  fontSize: 10,
+                                  cursor: "pointer",
+                                  borderRadius: 6,
+                                }}
                               >
                                 <i className="bi bi-arrow-repeat me-1"></i>
-                                Replace
+                                Replace (no crop)
                               </label>
                               <input
                                 id={`replace-img-${imgIdx}`}
@@ -1786,21 +2623,125 @@ const ProductInfo = () => {
                     {morePreviews.length > 0 && (
                       <div className="d-flex flex-wrap gap-2 mt-2">
                         {morePreviews.map((src, i) => (
-                          <img
-                            key={i}
-                            src={src}
-                            alt=""
-                            style={{
-                              width: 70,
-                              height: 70,
-                              objectFit: "cover",
-                              borderRadius: 8,
-                              border: "2px solid #dee2e6",
-                            }}
-                          />
+                          <div key={i} style={{ width: 80 }}>
+                            <img
+                              src={src}
+                              alt=""
+                              style={{
+                                width: "100%",
+                                height: 70,
+                                objectFit: "cover",
+                                borderRadius: 8,
+                                border: "2px solid #dee2e6",
+                                display: "block",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-sm w-100 mt-1 py-0"
+                              style={{
+                                fontSize: 9,
+                                fontWeight: 600,
+                                background:
+                                  "linear-gradient(135deg, #667eea, #764ba2)",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 5,
+                              }}
+                              onClick={() => openCropperForEditMore(i)}
+                            >
+                              <i className="bi bi-crop me-1"></i>Crop
+                            </button>
+                          </div>
                         ))}
                       </div>
                     )}
+                  </div>
+
+                  {/* Video Management Section */}
+                  <div
+                    className="mb-4 p-3 rounded-3"
+                    style={{
+                      background: "#f0fdf4",
+                      border: "1.5px solid #86efac",
+                    }}
+                  >
+                    <h6 className="fw-bold mb-3" style={{ color: "#059669" }}>
+                      <i className="bi bi-film me-2"></i>Product Video
+                    </h6>
+
+                    {editProduct.product_video && (
+                      <div className="mb-3">
+                        <p className="small text-muted fw-semibold mb-2">
+                          Current Video/Link:
+                        </p>
+                        {editProduct.product_video.includes("youtube.com") || editProduct.product_video.includes("youtu.be") ? (
+                           <div className="ratio ratio-16x9 rounded-3 overflow-hidden shadow-sm" style={{ maxHeight: "200px" }}>
+                             <iframe 
+                               src={editProduct.product_video.replace("shorts/", "embed/").replace("watch?v=", "embed/")} 
+                               title="YouTube video" 
+                               allowFullScreen
+                             ></iframe>
+                           </div>
+                        ) : (
+                          <video
+                            src={editProduct.product_video}
+                            controls
+                            style={{
+                              width: "100%",
+                              maxHeight: "150px",
+                              borderRadius: "8px",
+                            }}
+                          />
+                        )}
+                        <div className="mt-2 text-center">
+                           <button 
+                             className="btn btn-link btn-sm text-danger p-0"
+                             onClick={() => setEditProduct(prev => ({...prev, product_video: ""}))}
+                           >
+                             <i className="bi bi-trash me-1"></i>Clear Current Video
+                           </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div
+                      className="p-3 rounded-3"
+                      style={{
+                        border: "2px dashed #86efac",
+                        background: "#fff",
+                      }}
+                    >
+                      <div className="mb-3">
+                        <label className="form-label small text-muted fw-bold">Update File</label>
+                        <input
+                          type="file"
+                          accept="video/*"
+                          className="form-control form-control-sm"
+                          onChange={(e) => handleUpdateVideo(e.target.files[0])}
+                          disabled={videoUploading}
+                        />
+                      </div>
+
+                      <div className="mb-0">
+                        <label className="form-label small text-muted fw-bold">Update YouTube URL</label>
+                        <input 
+                          type="text" 
+                          className="form-control form-control-sm" 
+                          placeholder="Paste YouTube link here..."
+                          {...rEdit("youtube_url")}
+                        />
+                      </div>
+
+                      {videoUploading && (
+                        <div className="text-center mt-2">
+                          <span className="spinner-border spinner-border-sm text-success me-2" />
+                          <small className="text-muted">
+                            Uploading video...
+                          </small>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1933,7 +2874,7 @@ const ProductInfo = () => {
                     </div>
 
                     {/* MRP */}
-                    <div className="col-md-4">
+                    <div className="col-md-3">
                       <label className="form-label fw-semibold small">
                         MRP (₹) <span className="text-danger">*</span>
                       </label>
@@ -1947,11 +2888,30 @@ const ProductInfo = () => {
                             min: { value: 0, message: "≥ 0" },
                           })}
                         />
-                        {eEdit.product_del_price && (
-                          <div className="invalid-feedback">
-                            {eEdit.product_del_price.message}
-                          </div>
-                        )}
+                      </div>
+                      {eEdit.product_del_price && (
+                        <div className="invalid-feedback d-block">
+                          {eEdit.product_del_price.message}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* GST */}
+                    <div className="col-md-3">
+                      <label className="form-label fw-semibold small">
+                        GST (%)
+                      </label>
+                      <div className="input-group">
+                        <input
+                          type="number"
+                          className="form-control"
+                          placeholder="0"
+                          {...rEdit("gst_percent", {
+                            min: { value: 0, message: "≥ 0" },
+                            max: { value: 100, message: "≤ 100" },
+                          })}
+                        />
+                        <span className="input-group-text">%</span>
                       </div>
                     </div>
 
@@ -2077,6 +3037,42 @@ const ProductInfo = () => {
                         rows="3"
                         placeholder="Ingredients..."
                         {...rEdit("ingredients")}
+                      ></textarea>
+                    </div>
+
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold small">
+                        Why Choose This Product? (Key Features)
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="e.g. Certified Organic Quality&#10;Naturally Grown Without Harmful Chemicals&#10;Unpolished for Better Nutrition"
+                        {...rEdit("why_choose")}
+                      ></textarea>
+                    </div>
+
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold small">
+                        Storage Instructions
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="e.g. Store in a cool, dry place away from moisture..."
+                        {...rEdit("storage_instructions")}
+                      ></textarea>
+                    </div>
+
+                    <div className="col-md-12">
+                      <label className="form-label fw-semibold small">
+                        Common Uses
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="e.g. Dal Tadka&#10;Dal Fry&#10;Sambhar&#10;Khichdi"
+                        {...rEdit("common_uses")}
                       ></textarea>
                     </div>
                   </div>
@@ -2719,6 +3715,18 @@ const ProductInfo = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════════════
+          IMAGE CROPPER MODAL
+      ════════════════════════════════════════════════════════════════════ */}
+      {cropperOpen && cropperImageSrc && (
+        <ImageCropperModal
+          imageSrc={cropperImageSrc}
+          fileName={cropperFileName}
+          onCropDone={handleCropDone}
+          onClose={handleCropperClose}
+        />
       )}
     </>
   );

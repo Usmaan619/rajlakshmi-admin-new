@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "../../Common/SideBar/sidebar";
 import Navbar from "../../Common/Navbar/navbar";
-import {
-  getData,
-  postData,
-  deleteDataNew,
-} from "../../Common/APIs/api";
+import { getData, postData, deleteDataNew } from "../../Common/APIs/api";
 import { toastSuccess, toastError } from "../../../Services/toast.service";
 
 // Extract ID from YouTube link
@@ -14,7 +10,7 @@ const extractYoutubeId = (value) => {
   // Check for shorts URL
   const shortsMatch = value.match(/youtube\.com\/shorts\/([A-Za-z0-9_-]+)/);
   if (shortsMatch) return shortsMatch[1];
-  
+
   // Check for youtu.be URL
   const youtuBeMatch = value.match(/youtu\.be\/([A-Za-z0-9_-]+)/);
   if (youtuBeMatch) return youtuBeMatch[1];
@@ -31,11 +27,27 @@ const YoutubeShortEmbed = ({ shortId = "" }) => {
   if (!shortId) return null;
   const src = `https://www.youtube.com/embed/${shortId}`;
   return (
-    <div style={{ position: "relative", paddingBottom: "177.77%", height: 0, overflow: "hidden", borderRadius: "12px", background: "#000" }}>
+    <div
+      style={{
+        position: "relative",
+        paddingBottom: "177.77%",
+        height: 0,
+        overflow: "hidden",
+        borderRadius: "12px",
+        background: "#000",
+      }}
+    >
       <iframe
         src={src}
         title={`YouTube Short ${shortId}`}
-        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          border: "none",
+        }}
         allow="autoplay; encrypted-media; picture-in-picture"
         allowFullScreen
       />
@@ -89,7 +101,8 @@ const YoutubeShortsUploader = () => {
 
   // delete
   const deleteShort = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this YouTube Short?")) return;
+    if (!window.confirm("Are you sure you want to delete this YouTube Short?"))
+      return;
     const res = await deleteDataNew(`admin/shorts-delete/${id}`);
     if (res.success) {
       toastSuccess("Deleted successfully");
@@ -234,7 +247,7 @@ const YoutubeShortsUploader = () => {
                       fontSize: "13px",
                       display: "flex",
                       alignItems: "center",
-                      gap: "8px"
+                      gap: "8px",
                     }}
                   >
                     <span style={{ color: "#FF0000" }}>▶</span> {s.short_id}

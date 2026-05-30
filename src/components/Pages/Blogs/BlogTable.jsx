@@ -8,12 +8,15 @@ import {
   Loader2,
   Search,
   BookOpen,
+  Edit,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import { toast } from "react-toastify";
 import { getAllBlogs, deleteBlog } from "./blogApi";
 
 const BlogTable = ({ refreshTrigger }) => {
+  const navigate = useNavigate();
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -160,10 +163,18 @@ const BlogTable = ({ refreshTrigger }) => {
                   <td className="px-6 py-5 text-right">
                     <div className="flex items-center justify-end gap-3">
                       <button
+                        onClick={() => navigate(`/blog/view/${blog.slug}`)}
                         className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                         title="View Post"
                       >
                         <Eye size={18} />
+                      </button>
+                      <button
+                        onClick={() => navigate(`/blog/edit/${blog.id}`)}
+                        className="p-2 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors"
+                        title="Edit Post"
+                      >
+                        <Edit size={18} />
                       </button>
                       <button
                         onClick={() => handleDelete(blog.id)}
