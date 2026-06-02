@@ -56,6 +56,7 @@ const getMarginPercentage = (weightStr) => {
   if (isNaN(value)) return 0;
 
   if (lowerStr.includes("g") && !lowerStr.includes("kg")) value = value / 1000;
+  if (lowerStr.includes("ml")) value = value / 1000;
 
   if (value <= 0.5) return 30; // 500g sample
   if (value <= 1) return 30; // 1kg (user didn't specify, keeping a safe default or matching 10kg logic)
@@ -85,6 +86,9 @@ const calculateRatePerKg = (weightStr, price) => {
   if (lowerStr.includes("g") && !lowerStr.includes("kg")) {
     value = value / 1000;
   }
+  if (lowerStr.includes("ml")) {
+    value = value / 1000;
+  }
 
   return (price / value).toFixed(2);
 };
@@ -101,6 +105,7 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
   const [price, setPrice] = useState("");
   const [purchasePrice, setPurchasePrice] = useState("");
   const [delPrice, setDelPrice] = useState("");
+  const [pricingMode, setPricingMode] = useState("per_kg"); // "per_kg" or "fixed"
 
   useEffect(() => {
     if (weight && purchasePrice) {
@@ -126,23 +131,28 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
     let val = parseFloat(lower);
     if (isNaN(val)) return 0;
     if (lower.includes("g") && !lower.includes("kg")) val = val / 1000;
+    if (lower.includes("ml")) val = val / 1000;
     return val;
   };
 
-  const finalPrice = Math.round(
-    (parseFloat(price) || 0) * (getWeightVal(weight) || 1),
-  );
+  const finalPrice = pricingMode === "fixed"
+    ? Math.round(parseFloat(price) || 0)
+    : Math.round((parseFloat(price) || 0) * (getWeightVal(weight) || 1));
+
+  const finalMRP = pricingMode === "fixed"
+    ? Math.round(parseFloat(delPrice) || 0)
+    : Math.round((parseFloat(delPrice) || 0) * (getWeightVal(weight) || 1));
 
   const addVariant = () => {
     if (!weight.trim()) return;
-    const wVal = getWeightVal(weight) || 1;
     const newVariant = {
       weight: weight.trim(),
       price: finalPrice || 0, // Total Selling Price
-      del_price: Math.round((parseFloat(delPrice) || 0) * wVal), // Total MRP
-      purchase_price: Number(purchasePrice) || 0, // Purchase Rate (Per kg)
-      selling_rate: Number(price) || 0, // Selling Rate (Per kg)
-      mrp_rate: Number(delPrice) || 0, // MRP Rate (Per kg)
+      del_price: finalMRP || 0, // Total MRP
+      purchase_price: Number(purchasePrice) || 0,
+      selling_rate: Number(price) || 0, // Rate input
+      mrp_rate: Number(delPrice) || 0, // MRP Rate input
+      pricing_mode: pricingMode, // Save mode for editing
     };
     const updated = [...variants, newVariant];
     setVariants(updated);
@@ -176,7 +186,8 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
   const updateVariantRate = (index, newRate) => {
     const updated = [...variants];
     const v = updated[index];
-    const weightVal = getWeightVal(v.weight) || 1;
+    const isFixed = v.pricing_mode === "fixed";
+    const weightVal = isFixed ? 1 : (getWeightVal(v.weight) || 1);
     updated[index] = {
       ...v,
       price: Math.round(newRate * weightVal),
@@ -188,7 +199,8 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
   const updateVariantMRPRate = (index, newMRP) => {
     const updated = [...variants];
     const v = updated[index];
-    const weightVal = getWeightVal(v.weight) || 1;
+    const isFixed = v.pricing_mode === "fixed";
+    const weightVal = isFixed ? 1 : (getWeightVal(v.weight) || 1);
     updated[index] = { 
       ...v, 
       del_price: Math.round(newMRP * weightVal),
@@ -207,9 +219,23 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
       }}
     >
       <div className="row g-3 mb-4 align-items-end">
-        <div className="col-md-3">
+        <div className="col-md-2">
           <label className="form-label small fw-bold text-slate-700 mb-1">
-            Weight
+            Pricing Mode
+          </label>
+          <select 
+            className="form-select form-select-sm shadow-xs" 
+            value={pricingMode} 
+            onChange={(e) => setPricingMode(e.target.value)}
+            style={{ borderRadius: "8px" }}
+          >
+            <option value="per_kg">By Weight (Rate/Kg)</option>
+            <option value="fixed">Fixed (Per Pack/Btl)</option>
+          </select>
+        </div>
+        <div className="col-md-2">
+          <label className="form-label small fw-bold text-slate-700 mb-1">
+            Weight / Unit
           </label>
           <div className="input-group input-group-sm shadow-xs">
             <span className="input-group-text bg-light border-end-0">
@@ -218,7 +244,7 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
             <input
               type="text"
               className="form-control form-control-sm border-start-0"
-              placeholder="e.g. 10kg"
+              placeholder={pricingMode === "fixed" ? "e.g. 1 BTL" : "e.g. 10kg"}
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               style={{ borderRadius: "0 8px 8px 0" }}
@@ -240,7 +266,7 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
         </div>
         <div className="col-md-2">
           <label className="form-label small fw-bold text-slate-700 mb-1">
-            Rate ₹
+            {pricingMode === "fixed" ? "Price ₹" : "Rate ₹"}
           </label>
           <input
             type="number"
@@ -251,8 +277,8 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
             style={{ borderRadius: "8px" }}
           />
         </div>
-        <div className="col-md-2">
-          <label className="form-label small fw-bold text-slate-700 mb-1">
+        <div className="col-md-1">
+          <label className="form-label small fw-bold text-slate-700 mb-1" style={{ whiteSpace: "nowrap" }}>
             MRP ₹
           </label>
           <input
@@ -354,8 +380,8 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
                     <input
                       type="number"
                       className="form-control form-control-sm border-0 bg-transparent p-0 ps-1 fw-bold text-success"
-                      value={Math.round(
-                        v.price / (getWeightVal(v.weight) || 1),
+                      value={v.selling_rate || Math.round(
+                        v.price / (v.pricing_mode === "fixed" ? 1 : (getWeightVal(v.weight) || 1)),
                       )}
                       onChange={(e) =>
                         updateVariantRate(i, Number(e.target.value))
@@ -374,7 +400,7 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
                     <input
                       type="number"
                       className="form-control form-control-sm border-0 bg-transparent p-0 ps-1 text-muted"
-                      value={v.mrp_rate || Math.round(v.del_price / (getWeightVal(v.weight) || 1))}
+                      value={v.mrp_rate || Math.round(v.del_price / (v.pricing_mode === "fixed" ? 1 : (getWeightVal(v.weight) || 1)))}
                       onChange={(e) =>
                         updateVariantMRPRate(i, Number(e.target.value))
                       }
@@ -408,7 +434,7 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
                   </span>
                 </td>
                 <td className="text-muted small">
-                  ₹{calculateRatePerKg(v.weight, v.price)} / kg
+                  {v.pricing_mode === "fixed" ? "Fixed" : `₹${calculateRatePerKg(v.weight, v.price)} / kg`}
                 </td>
                 <td className="text-end pe-3">
                   <button
