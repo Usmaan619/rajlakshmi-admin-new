@@ -135,13 +135,15 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
     return val;
   };
 
-  const finalPrice = pricingMode === "fixed"
-    ? Math.round(parseFloat(price) || 0)
-    : Math.round((parseFloat(price) || 0) * (getWeightVal(weight) || 1));
+  const finalPrice =
+    pricingMode === "fixed"
+      ? Math.round(parseFloat(price) || 0)
+      : Math.round((parseFloat(price) || 0) * (getWeightVal(weight) || 1));
 
-  const finalMRP = pricingMode === "fixed"
-    ? Math.round(parseFloat(delPrice) || 0)
-    : Math.round((parseFloat(delPrice) || 0) * (getWeightVal(weight) || 1));
+  const finalMRP =
+    pricingMode === "fixed"
+      ? Math.round(parseFloat(delPrice) || 0)
+      : Math.round((parseFloat(delPrice) || 0) * (getWeightVal(weight) || 1));
 
   const addVariant = () => {
     if (!weight.trim()) return;
@@ -175,10 +177,6 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
     const updated = [...variants];
     const v = { ...updated[index], [field]: value };
 
-    // If rate or purchase_price changed, we might want to update final price?
-    // Actually, let's keep it simple: price is always the "Final Price" saved to DB.
-    // If they edit "selling_rate" (which we'll use in the UI), it updates price.
-
     updated[index] = v;
     setVariants(updated);
   };
@@ -187,7 +185,7 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
     const updated = [...variants];
     const v = updated[index];
     const isFixed = v.pricing_mode === "fixed";
-    const weightVal = isFixed ? 1 : (getWeightVal(v.weight) || 1);
+    const weightVal = isFixed ? 1 : getWeightVal(v.weight) || 1;
     updated[index] = {
       ...v,
       price: Math.round(newRate * weightVal),
@@ -200,11 +198,11 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
     const updated = [...variants];
     const v = updated[index];
     const isFixed = v.pricing_mode === "fixed";
-    const weightVal = isFixed ? 1 : (getWeightVal(v.weight) || 1);
-    updated[index] = { 
-      ...v, 
+    const weightVal = isFixed ? 1 : getWeightVal(v.weight) || 1;
+    updated[index] = {
+      ...v,
       del_price: Math.round(newMRP * weightVal),
-      mrp_rate: newMRP
+      mrp_rate: newMRP,
     };
     setVariants(updated);
   };
@@ -223,9 +221,9 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
           <label className="form-label small fw-bold text-slate-700 mb-1">
             Pricing Mode
           </label>
-          <select 
-            className="form-select form-select-sm shadow-xs" 
-            value={pricingMode} 
+          <select
+            className="form-select form-select-sm shadow-xs"
+            value={pricingMode}
             onChange={(e) => setPricingMode(e.target.value)}
             style={{ borderRadius: "8px" }}
           >
@@ -253,7 +251,7 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
         </div>
         <div className="col-md-2">
           <label className="form-label small fw-bold text-slate-700 mb-1">
-            Purchase ₹
+            Buy ₹
           </label>
           <input
             type="number"
@@ -266,7 +264,7 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
         </div>
         <div className="col-md-2">
           <label className="form-label small fw-bold text-slate-700 mb-1">
-            {pricingMode === "fixed" ? "Price ₹" : "Rate ₹"}
+            {pricingMode === "fixed" ? "Total Price ₹" : "Rate ₹"}
           </label>
           <input
             type="number"
@@ -278,7 +276,10 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
           />
         </div>
         <div className="col-md-1">
-          <label className="form-label small fw-bold text-slate-700 mb-1" style={{ whiteSpace: "nowrap" }}>
+          <label
+            className="form-label small fw-bold text-slate-700 mb-1"
+            style={{ whiteSpace: "nowrap" }}
+          >
             MRP ₹
           </label>
           <input
@@ -380,9 +381,15 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
                     <input
                       type="number"
                       className="form-control form-control-sm border-0 bg-transparent p-0 ps-1 fw-bold text-success"
-                      value={v.selling_rate || Math.round(
-                        v.price / (v.pricing_mode === "fixed" ? 1 : (getWeightVal(v.weight) || 1)),
-                      )}
+                      value={
+                        v.selling_rate ||
+                        Math.round(
+                          v.price /
+                            (v.pricing_mode === "fixed"
+                              ? 1
+                              : getWeightVal(v.weight) || 1),
+                        )
+                      }
                       onChange={(e) =>
                         updateVariantRate(i, Number(e.target.value))
                       }
@@ -400,7 +407,15 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
                     <input
                       type="number"
                       className="form-control form-control-sm border-0 bg-transparent p-0 ps-1 text-muted"
-                      value={v.mrp_rate || Math.round(v.del_price / (v.pricing_mode === "fixed" ? 1 : (getWeightVal(v.weight) || 1)))}
+                      value={
+                        v.mrp_rate ||
+                        Math.round(
+                          v.del_price /
+                            (v.pricing_mode === "fixed"
+                              ? 1
+                              : getWeightVal(v.weight) || 1),
+                        )
+                      }
                       onChange={(e) =>
                         updateVariantMRPRate(i, Number(e.target.value))
                       }
@@ -434,7 +449,9 @@ const WeightPriceInput = ({ variants, setVariants, onFirstVariant }) => {
                   </span>
                 </td>
                 <td className="text-muted small">
-                  {v.pricing_mode === "fixed" ? "Fixed" : `₹${calculateRatePerKg(v.weight, v.price)} / kg`}
+                  {v.pricing_mode === "fixed"
+                    ? "Fixed"
+                    : `₹${calculateRatePerKg(v.weight, v.price)} / kg`}
                 </td>
                 <td className="text-end pe-3">
                   <button
@@ -773,7 +790,12 @@ const ProductInfo = () => {
       common_uses: p.common_uses || "",
       product_subtitle: p.product_subtitle || "",
       product_video: p.product_video || "",
-      youtube_url: (p.product_video && (p.product_video.includes("youtube.com") || p.product_video.includes("youtu.be"))) ? p.product_video : "",
+      youtube_url:
+        p.product_video &&
+        (p.product_video.includes("youtube.com") ||
+          p.product_video.includes("youtu.be"))
+          ? p.product_video
+          : "",
       gst_percent: p.gst_percent || 0,
     });
     setShowEdit(true);
@@ -921,7 +943,9 @@ const ProductInfo = () => {
           return { ...prev, product_images: imgs };
         });
       } else {
-        toastError(res?.data?.error || res?.data?.message || "Failed to remove image.");
+        toastError(
+          res?.data?.error || res?.data?.message || "Failed to remove image.",
+        );
       }
     } catch (err) {
       console.log("Remove image error:", err);
@@ -2324,7 +2348,9 @@ const ProductInfo = () => {
                         }}
                       >
                         <div className="mb-3">
-                          <label className="form-label small text-muted">Upload Video File</label>
+                          <label className="form-label small text-muted">
+                            Upload Video File
+                          </label>
                           <input
                             type="file"
                             accept="video/*"
@@ -2332,12 +2358,14 @@ const ProductInfo = () => {
                             onChange={onAddVideoChange}
                           />
                         </div>
-                        
+
                         <div className="mb-2">
-                          <label className="form-label small text-muted">Or YouTube Shorts/Video URL</label>
-                          <input 
-                            type="text" 
-                            className="form-control form-control-sm" 
+                          <label className="form-label small text-muted">
+                            Or YouTube Shorts/Video URL
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
                             placeholder="https://www.youtube.com/shorts/..."
                             {...rAdd("youtube_url")}
                           />
@@ -2545,7 +2573,10 @@ const ProductInfo = () => {
                                   onClick={() => handleRemoveImage(imgIdx)}
                                   title="Remove image"
                                 >
-                                  <i className="bi bi-trash" style={{ fontSize: 11 }}></i>
+                                  <i
+                                    className="bi bi-trash"
+                                    style={{ fontSize: 11 }}
+                                  ></i>
                                 </button>
                               </div>
                               <div className="d-flex gap-1 mt-1">
@@ -2701,14 +2732,20 @@ const ProductInfo = () => {
                         <p className="small text-muted fw-semibold mb-2">
                           Current Video/Link:
                         </p>
-                        {editProduct.product_video.includes("youtube.com") || editProduct.product_video.includes("youtu.be") ? (
-                           <div className="ratio ratio-16x9 rounded-3 overflow-hidden shadow-sm" style={{ maxHeight: "200px" }}>
-                             <iframe 
-                               src={editProduct.product_video.replace("shorts/", "embed/").replace("watch?v=", "embed/")} 
-                               title="YouTube video" 
-                               allowFullScreen
-                             ></iframe>
-                           </div>
+                        {editProduct.product_video.includes("youtube.com") ||
+                        editProduct.product_video.includes("youtu.be") ? (
+                          <div
+                            className="ratio ratio-16x9 rounded-3 overflow-hidden shadow-sm"
+                            style={{ maxHeight: "200px" }}
+                          >
+                            <iframe
+                              src={editProduct.product_video
+                                .replace("shorts/", "embed/")
+                                .replace("watch?v=", "embed/")}
+                              title="YouTube video"
+                              allowFullScreen
+                            ></iframe>
+                          </div>
                         ) : (
                           <video
                             src={editProduct.product_video}
@@ -2721,12 +2758,18 @@ const ProductInfo = () => {
                           />
                         )}
                         <div className="mt-2 text-center">
-                           <button 
-                             className="btn btn-link btn-sm text-danger p-0"
-                             onClick={() => setEditProduct(prev => ({...prev, product_video: ""}))}
-                           >
-                             <i className="bi bi-trash me-1"></i>Clear Current Video
-                           </button>
+                          <button
+                            className="btn btn-link btn-sm text-danger p-0"
+                            onClick={() =>
+                              setEditProduct((prev) => ({
+                                ...prev,
+                                product_video: "",
+                              }))
+                            }
+                          >
+                            <i className="bi bi-trash me-1"></i>Clear Current
+                            Video
+                          </button>
                         </div>
                       </div>
                     )}
@@ -2739,7 +2782,9 @@ const ProductInfo = () => {
                       }}
                     >
                       <div className="mb-3">
-                        <label className="form-label small text-muted fw-bold">Update File</label>
+                        <label className="form-label small text-muted fw-bold">
+                          Update File
+                        </label>
                         <input
                           type="file"
                           accept="video/*"
@@ -2750,10 +2795,12 @@ const ProductInfo = () => {
                       </div>
 
                       <div className="mb-0">
-                        <label className="form-label small text-muted fw-bold">Update YouTube URL</label>
-                        <input 
-                          type="text" 
-                          className="form-control form-control-sm" 
+                        <label className="form-label small text-muted fw-bold">
+                          Update YouTube URL
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control form-control-sm"
                           placeholder="Paste YouTube link here..."
                           {...rEdit("youtube_url")}
                         />
