@@ -629,6 +629,7 @@ const ProductInfo = () => {
   const [showEdit, setShowEdit] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
   const [editWeights, setEditWeights] = useState([]); // weight array for Edit
+  const [editYoutubeUrl, setEditYoutubeUrl] = useState("");
 
   /* ── Image management inside Edit modal ────────────────────────────────── */
   const [moreImages, setMoreImages] = useState([]); // files for /add-images
@@ -790,14 +791,15 @@ const ProductInfo = () => {
       common_uses: p.common_uses || "",
       product_subtitle: p.product_subtitle || "",
       product_video: p.product_video || "",
-      youtube_url:
-        p.product_video &&
-        (p.product_video.includes("youtube.com") ||
-          p.product_video.includes("youtu.be"))
-          ? p.product_video
-          : "",
       gst_percent: p.gst_percent || 0,
     });
+    setEditYoutubeUrl(
+      p.product_video &&
+      (p.product_video.includes("youtube.com") ||
+        p.product_video.includes("youtu.be"))
+        ? p.product_video
+        : ""
+    );
     setShowEdit(true);
   };
 
@@ -1007,6 +1009,7 @@ const ProductInfo = () => {
     try {
       const fd = new FormData();
       Object.entries(data).forEach(([k, v]) => {
+        if (k === "product_video" || k === "youtube_url") return;
         if (k === "is_featured" || k === "is_active" || k === "best_saller")
           fd.append(k, v ? 1 : 0);
         else fd.append(k, v ?? "");
@@ -1014,7 +1017,9 @@ const ProductInfo = () => {
       fd.append("product_weight", JSON.stringify(addWeights));
       addImages.forEach((f) => fd.append("images", f));
       if (addVideo) fd.append("video", addVideo);
-      if (data.youtube_url) fd.append("product_video", data.youtube_url);
+      
+      const finalVideo = data.youtube_url || data.product_video || "";
+      if (finalVideo) fd.append("product_video", finalVideo);
 
       const res = await postFormData("products/add-product", fd);
       if (res?.data?.success) {
@@ -1062,7 +1067,14 @@ const ProductInfo = () => {
         common_uses: data.common_uses,
         product_subtitle: data.product_subtitle,
         gst_percent: data.gst_percent || 0,
-        product_video: data.youtube_url || editProduct.product_video,
+        product_video:
+          editYoutubeUrl !== ""
+            ? editYoutubeUrl
+            : editProduct.product_video &&
+              (editProduct.product_video.includes("youtube.com") ||
+                editProduct.product_video.includes("youtu.be"))
+            ? ""
+            : editProduct.product_video,
         // NOTE: product_images intentionally NOT included here.
         // Base64 image strings are too large for JSON PUT body (~750KB+ for 3 images).
         // Images are managed exclusively via /replace-image and /add-images endpoints.
@@ -2802,7 +2814,8 @@ const ProductInfo = () => {
                           type="text"
                           className="form-control form-control-sm"
                           placeholder="Paste YouTube link here..."
-                          {...rEdit("youtube_url")}
+                          value={editYoutubeUrl}
+                          onChange={(e) => setEditYoutubeUrl(e.target.value)}
                         />
                       </div>
 
