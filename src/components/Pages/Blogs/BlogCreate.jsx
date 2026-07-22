@@ -10,7 +10,6 @@ const BlogCreate = () => {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [content, setContent] = useState("");
-  const [image, setImage] = useState(null);
 
   const handleCreate = async () => {
     if (!title || !content) return toast.error("Title & content required!");
@@ -19,7 +18,6 @@ const BlogCreate = () => {
     fd.append("title", title);
     fd.append("category", category);
     fd.append("content", content);
-    if (image) fd.append("image", image);
 
     try {
       const res = await postFormData("/blogs", fd);
@@ -42,13 +40,6 @@ const BlogCreate = () => {
         setCategory={setCategory}
         content={content}
         setContent={setContent}
-      />
-
-      <input
-        type="file"
-        className="form-control mb-3"
-        accept="image/*"
-        onChange={(e) => setImage(e.target.files[0])}
       />
 
       <button className="btn btn-primary" onClick={handleCreate}>

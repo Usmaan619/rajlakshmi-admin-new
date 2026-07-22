@@ -9,7 +9,6 @@ const BlogEdit = () => {
   const navigate = useNavigate();
 
   const [blog, setBlog] = useState(null);
-  const [image, setImage] = useState(null);
 
   const loadBlog = async () => {
     const res = await getData("blogs");
@@ -28,7 +27,6 @@ const BlogEdit = () => {
     fd.append("title", blog.title);
     fd.append("category", blog.category);
     fd.append("content", blog.content);
-    if (image) fd.append("image", image);
 
     try {
       await postFormData(`/blogs/${id}`, fd);
@@ -53,12 +51,6 @@ const BlogEdit = () => {
       />
 
       <img src={blog.image_url} className="img-fluid mb-3" />
-
-      <input
-        type="file"
-        className="form-control mb-3"
-        onChange={(e) => setImage(e.target.files[0])}
-      />
 
       <button className="btn btn-primary" onClick={updateBlog}>
         Update Blog
