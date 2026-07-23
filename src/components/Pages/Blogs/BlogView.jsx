@@ -332,7 +332,7 @@ const BlogView = ({ slug: propSlug, onNavigate }) => {
               </p>
               <hr style={{ borderColor: "rgba(255,255,255,0.2)" }} />
               <div className="mt-3 d-flex flex-column gap-2">
-                <div className="fw-bold">☎ +91 745 0532 522</div>
+                <div className="fw-bold">☎ +91 8769115905</div>
                 <div className="fw-bold">✉ contact@rajlakshmiijaviks.com</div>
               </div>
             </div>
