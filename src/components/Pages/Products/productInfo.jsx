@@ -766,7 +766,8 @@ const ProductInfo = () => {
 
   /* ── open edit modal ──────────────────────────────────────────────────── */
 
-  const openEdit = (p) => {
+  const openEdit = async (p) => {
+    // Show modal immediately with lite data so user sees it open fast
     setEditProduct(p);
     setEditWeights(parseWeight(p.product_weight));
     setMoreImages([]);
@@ -801,6 +802,50 @@ const ProductInfo = () => {
         : ""
     );
     setShowEdit(true);
+
+    // Fetch FULL product details (list API uses LITE_COLUMNS which omits
+    // full_description, health_benefits, ingredients, why_choose,
+    // storage_instructions, common_uses, full product_images, etc.)
+    try {
+      const fullProduct = await getData(`products/get-product/${p.id}`);
+      const fp = fullProduct?.products || fullProduct?.product || fullProduct;
+      if (fp && fp.id) {
+        setEditProduct(fp);
+        setEditWeights(parseWeight(fp.product_weight));
+        resetEdit({
+          product_name: fp.product_name,
+          product_price: fp.product_price,
+          product_purchase_price: fp.product_purchase_price,
+          product_del_price: fp.product_del_price,
+          product_stock: fp.product_stock,
+          category_name: fp.category_name,
+          category_id: fp.category_id ?? "",
+          is_featured: !!fp.is_featured,
+          best_saller: !!fp.best_saller,
+          is_active: !!fp.is_active,
+          short_description: fp.short_description || "",
+          full_description: fp.full_description || "",
+          health_benefits: fp.health_benefits || "",
+          ingredients: fp.ingredients || "",
+          why_choose: fp.why_choose || "",
+          storage_instructions: fp.storage_instructions || "",
+          common_uses: fp.common_uses || "",
+          product_subtitle: fp.product_subtitle || "",
+          product_video: fp.product_video || "",
+          gst_percent: fp.gst_percent || 0,
+        });
+        setEditYoutubeUrl(
+          fp.product_video &&
+          (fp.product_video.includes("youtube.com") ||
+            fp.product_video.includes("youtu.be"))
+            ? fp.product_video
+            : ""
+        );
+      }
+    } catch (err) {
+      console.log("Failed to fetch full product details:", err);
+      // Edit modal is already open with lite data, so user can still edit basic fields
+    }
   };
 
   /* ── Add: image helpers ───────────────────────────────────────────────── */
