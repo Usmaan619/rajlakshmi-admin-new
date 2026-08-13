@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { postData } from "../../Common/APIs/api";
 import Pagination from "react-bootstrap/Pagination";
 import noDataImg from "../../Assets/Images/home-img/flat-design-no-data-illustration.png";
-import moment from "moment/moment";
 
 const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -137,7 +136,6 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
               paginatedOrders.map((order, index) => (
                 <tr key={index}>
                   <td>{order?.user_id}</td>
-                  <td>{moment(order?.DATE).format("DD-MM-YYYY")}</td>
                   <td>{order?.user_name}</td>
                   <td>{new Date(order?.DATE).toLocaleDateString("en-GB")}</td>
                   <td>₹ {order?.user_total_amount}</td>
@@ -238,14 +236,23 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
                     <strong>Status:</strong>{" "}
                     <span
                       className={
-                        viewData.STATUS === "captured"
+                        viewData.STATUS === "captured" || viewData.STATUS === "Delivered"
                           ? "badge bg-success"
-                          : viewData.STATUS === "failed"
+                          : viewData.STATUS === "failed" || viewData.STATUS === "Cancel"
                             ? "badge bg-danger"
-                            : "badge bg-secondary"
+                            : viewData.STATUS === "Shipped"
+                              ? "badge bg-primary"
+                              : "badge bg-secondary"
                       }
                     >
                       {viewData.STATUS}
+                    </span>
+                  </p>
+
+                  <p className="mb-1">
+                    <strong>Payment:</strong>{" "}
+                    <span className={viewData.isPaymentPaid === "1" ? "badge bg-success" : "badge bg-warning text-dark"}>
+                      {viewData.isPaymentPaid === "1" ? "Paid" : "Unpaid"}
                     </span>
                   </p>
                 </div>
@@ -276,7 +283,79 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
                     {viewData.user_country && <>{viewData.user_country}</>}
                   </div>
                 </div>
-                {/* PAYMENT DETAILS (PARSED JSON) */}
+
+                {/* CART ITEMS - from cart_data (always available) or paymentDetails.notes.cart */}
+                {(() => {
+                  let cartItems = [];
+
+                  // 1st priority: cart_data column (saved at order creation, always available)
+                  try {
+                    if (viewData.cart_data) {
+                      const parsed = typeof viewData.cart_data === "string"
+                        ? JSON.parse(viewData.cart_data)
+                        : viewData.cart_data;
+                      if (Array.isArray(parsed) && parsed.length > 0) {
+                        cartItems = parsed;
+                      }
+                    }
+                  } catch (err) {
+                    console.error("Error parsing cart_data:", err);
+                  }
+
+                  // 2nd priority: paymentDetails.notes.cart (for older orders / backward compatibility)
+                  if (cartItems.length === 0) {
+                    try {
+                      if (viewData.paymentDetails) {
+                        const payment = typeof viewData.paymentDetails === "string"
+                          ? JSON.parse(viewData.paymentDetails)
+                          : viewData.paymentDetails;
+                        if (payment?.notes?.cart && Array.isArray(payment.notes.cart)) {
+                          cartItems = payment.notes.cart;
+                        }
+                      }
+                    } catch (err) {
+                      console.error("Error parsing paymentDetails for cart:", err);
+                    }
+                  }
+
+                  if (cartItems.length === 0) return null;
+
+                  return (
+                    <div className="card mb-3">
+                      <div className="card-header">
+                        <strong>Cart Items</strong>
+                      </div>
+                      <div className="card-body p-0">
+                        <table className="table table-bordered mb-0">
+                          <thead>
+                            <tr>
+                              <th>#</th>
+                              <th>Product</th>
+                              <th>Weight</th>
+                              <th>Price</th>
+                              <th>Qty</th>
+                              <th>Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {cartItems.map((item, index) => (
+                              <tr key={index}>
+                                <td>{index + 1}</td>
+                                <td>{item.name}</td>
+                                <td>{item.weight || "-"}</td>
+                                <td>₹{item.price}</td>
+                                <td>{item.quantity}</td>
+                                <td>₹{item.price * item.quantity}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* PAYMENT DETAILS (PARSED JSON) - only if payment was made */}
                 {(() => {
                   let payment = null;
 
@@ -374,44 +453,6 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
                             )}
                           </div>
                         </div>
-
-                        {/* CART ITEMS */}
-                        {payment.notes?.cart?.length > 0 && (
-                          <div className="mt-4">
-                            <h5>Cart Items</h5>
-
-                            <table className="table table-bordered">
-                              <thead>
-                                <tr>
-                                  <th>#</th>
-                                  <th>Product</th>
-                                  <th>Weight</th>
-                                  <th>Price</th>
-                                  <th>Qty</th>
-                                  <th>Total</th>
-                                </tr>
-                              </thead>
-
-                              <tbody>
-                                {payment.notes.cart.map((item, index) => (
-                                  <tr key={index}>
-                                    <td>{index + 1}</td>
-
-                                    <td>{item.name}</td>
-
-                                    <td>{item.weight}</td>
-
-                                    <td>₹{item.price}</td>
-
-                                    <td>{item.quantity}</td>
-
-                                    <td>₹{item.price * item.quantity}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
 
                         {/* NOTES */}
                         {payment.notes && (
