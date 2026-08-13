@@ -38,7 +38,7 @@ import BlogsTest from "../components/Pages/Blogs/blogtest.jsx";
 import Inquiry from "../components/Pages/Inquiry/Inquiry.jsx";
 import NewsletterPage from "../components/Pages/Newsletter/Newsletter.jsx";
 import YoutubeShortsUploader from "../components/Pages/YouTubeShorts/youtubeShorts.jsx";
-
+import ActiveCarts from "../components/Pages/ActiveCarts/ActiveCarts.jsx";
 
 import CreateAdminUserPage from "../components/Pages/CreateAdminUser/CreateAdminUserPage.jsx";
 import OfferManagement from "../components/OfferManagement/OfferManagement.jsx";
@@ -65,6 +65,7 @@ const AuthRoutes = () => {
           {/* Gauswarn Routes */}
           <Route path="/home" element={<Home />} />
           <Route path="/order" element={<Order />} />
+          <Route path="/active-carts" element={<ActiveCarts />} />
           <Route path="/product" element={<Product />} />
           <Route path="/home-page-banner-change" element={<BannerManager />} />
 

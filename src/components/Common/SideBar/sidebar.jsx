@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import "./sidebar.css";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { FiHome, FiLogOut } from "react-icons/fi";
+import { FiHome, FiLogOut, FiShoppingCart } from "react-icons/fi";
 import { GoListUnordered } from "react-icons/go";
 import { LiaTagSolid } from "react-icons/lia";
 import {
@@ -85,6 +85,12 @@ const Sidebar = () => {
       to: "/order",
       icon: GoListUnordered,
       label: "Orders",
+      permission: "orders",
+    },
+    {
+      to: "/active-carts",
+      icon: FiShoppingCart,
+      label: "Active Carts",
       permission: "orders",
     },
     {
