@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import SideBar from "../../Common/SideBar/sidebar";
 import Navbar from "../../Common/Navbar/navbar";
 import { getData } from "../../Common/APIs/api";
-import "./ActiveCarts.css";
 
 const ActiveCarts = () => {
   const [activeCarts, setActiveCarts] = useState([]);
