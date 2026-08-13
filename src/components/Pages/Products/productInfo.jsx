@@ -58,8 +58,7 @@ const getMarginPercentage = (weightStr) => {
   if (lowerStr.includes("g") && !lowerStr.includes("kg")) value = value / 1000;
   if (lowerStr.includes("ml")) value = value / 1000;
 
-  if (value <= 0.5) return 30; // 500g sample
-  if (value <= 1) return 30; // 1kg (user didn't specify, keeping a safe default or matching 10kg logic)
+  if (value <= 9.5) return 30; // 500g to 9.5kg
   if (value <= 10) return 20; // 10kg
   if (value <= 30) return 18; // 30kg
   if (value <= 50) return 15; // 50kg
