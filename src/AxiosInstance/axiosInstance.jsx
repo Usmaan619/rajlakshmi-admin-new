@@ -70,22 +70,9 @@ const axiosInterceptor = contexts => {
   axiosInstance.interceptors.response.use(
     (response) => response,
     (error) => {
-      if (error.response?.status === 401) {
-       
-      }
-      return Promise.reject(error);
-    }
-  );
- 
-  axiosInstance.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      if (error.response?.status === 403) {
-       
+      if (error.response?.status === 401 || error.response?.status === 403) {
         clearCache();
-        contexts(null)
-        // window.location.href = '/';
-       
+        contexts(null);
       }
       return Promise.reject(error);
     }

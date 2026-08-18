@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import { useContext, useEffect } from "react";
 import { UserContext } from "../Context/UserContext";
 import { getItem } from "../Services/storage.service.js";
@@ -59,6 +59,7 @@ const AuthRoutes = () => {
         <>
           <Route path="/" element={<Login />} />
           <Route path="/forgot" element={<Forgot />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </>
       ) : (
         <>
