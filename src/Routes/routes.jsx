@@ -42,6 +42,7 @@ import ActiveCarts from "../components/Pages/ActiveCarts/ActiveCarts.jsx";
 
 import CreateAdminUserPage from "../components/Pages/CreateAdminUser/CreateAdminUserPage.jsx";
 import OfferManagement from "../components/OfferManagement/OfferManagement.jsx";
+import CouponManager from "../components/Pages/Coupons/CouponManager.jsx";
 
 const AuthRoutes = () => {
   const { UserLogin, setUserLogin } = useContext(UserContext);
@@ -85,6 +86,7 @@ const AuthRoutes = () => {
           <Route path="/newlatter" element={<NewsletterPage />} />
           <Route path="/offerBanner" element={<OfferManagement />} />
           <Route path="/create-admin-user" element={<CreateAdminUserPage />} />
+          <Route path="/coupons" element={<CouponManager />} />
 
           <Route path="/blog/create" element={<BlogCreate />} />
           <Route path="/blog/list" element={<BlogList />} />

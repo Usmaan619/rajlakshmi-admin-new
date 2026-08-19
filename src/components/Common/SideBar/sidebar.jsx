@@ -16,7 +16,7 @@ import LogoRajlaxmi from "../../Assets/Images/Logo/rajlaxmi.svg";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { UserContext } from "../../../Context/UserContext";
 import { PiFlagBannerFold } from "react-icons/pi";
-import { LayoutPanelTop, RibbonIcon } from "lucide-react";
+import { LayoutPanelTop, RibbonIcon, Ticket } from "lucide-react";
 import { IoNewspaperOutline } from "react-icons/io5";
 
 const isTabletWidth = () =>
@@ -165,6 +165,12 @@ const Sidebar = () => {
       icon: FaRegCommentDots,
       label: "Feedback",
       permission: "feedback",
+    },
+    {
+      to: "/coupons",
+      icon: Ticket,
+      label: "Coupons",
+      permission: "coupons",
     },
   ];
 
