@@ -39,8 +39,8 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
 
     const matchesPayment = paymentFilter
       ? paymentFilter === "paid"
-        ? order.isPaymentPaid === "1"
-        : order.isPaymentPaid === "0"
+        ? (order.isPaymentPaid == 1 || order.isPaymentPaid === true || order.isPaymentPaid === "1" || order.isPaymentPaid === "true")
+        : (order.isPaymentPaid == 0 || order.isPaymentPaid === false || order.isPaymentPaid === "0" || order.isPaymentPaid === "false" || !order.isPaymentPaid)
       : true;
 
     const matchesSearch =
@@ -140,7 +140,7 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
                   <td>{order?.user_name}</td>
                   <td>{new Date(order?.DATE).toLocaleDateString("en-GB")}</td>
                   <td>₹ {order?.user_total_amount}</td>
-                  <td>{order?.isPaymentPaid === "1" ? "Paid" : "Unpaid"}</td>
+                  <td>{order?.isPaymentPaid == 1 || order?.isPaymentPaid === true || order?.isPaymentPaid === "1" || order?.isPaymentPaid === "true" ? "Paid" : "Unpaid"}</td>
 
                   <td className="align-middle">
                     <span
@@ -253,8 +253,8 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
 
                   <p className="mb-1">
                     <strong>Payment:</strong>{" "}
-                    <span className={viewData.isPaymentPaid === "1" ? "badge bg-success" : "badge bg-warning text-dark"}>
-                      {viewData.isPaymentPaid === "1" ? "Paid" : "Unpaid"}
+                    <span className={viewData.isPaymentPaid == 1 || viewData.isPaymentPaid === true || viewData.isPaymentPaid === "1" || viewData.isPaymentPaid === "true" ? "badge bg-success" : "badge bg-warning text-dark"}>
+                      {viewData.isPaymentPaid == 1 || viewData.isPaymentPaid === true || viewData.isPaymentPaid === "1" || viewData.isPaymentPaid === "true" ? "Paid" : "Unpaid"}
                     </span>
                   </p>
                 </div>

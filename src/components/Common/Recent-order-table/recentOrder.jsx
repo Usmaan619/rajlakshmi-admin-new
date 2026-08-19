@@ -2,7 +2,7 @@ import React from "react";
 
 const RecentOrderTable = ({ RecentOrderTableData = [] }) => {
   const getStatusConfig = (status, isPaid) => {
-    if (isPaid === "1") {
+    if (isPaid == 1 || isPaid === true || isPaid === "1" || isPaid === "true") {
       return {
         label: "Paid",
         bg: "rgba(16, 185, 129, 0.1)",
