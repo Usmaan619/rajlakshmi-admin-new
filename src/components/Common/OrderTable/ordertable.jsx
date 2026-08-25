@@ -3,12 +3,13 @@ import { postData } from "../../Common/APIs/api";
 import Pagination from "react-bootstrap/Pagination";
 import noDataImg from "../../Assets/Images/home-img/flat-design-no-data-illustration.png";
 
-const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
+const OrderTable = ({ ordersData = [], headings = [], refresh = () => { } }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewData, setViewData] = useState(null);
+
 
   const itemsPerPage = 10;
 
@@ -231,7 +232,24 @@ const OrderTable = ({ ordersData = [], headings = [], refresh = () => {} }) => {
                   </p>
 
                   <p className="mb-1">
-                    <strong>Order Amount:</strong> ₹{viewData.user_total_amount}
+                    <strong>Subtotal:</strong> ₹{(Number(viewData.user_total_amount) - Number(viewData.shipping_charge || 0) - Number(viewData.gst_amount || 0) - Number(viewData.platform_fee || 0) + Number(viewData.discount_amount || 0)).toFixed(2)}
+                  </p>
+                  <p className="mb-1">
+                    <strong>Shipping:</strong> ₹{viewData.shipping_charge || 0}
+                  </p>
+                  <p className="mb-1">
+                    <strong>Shipping GST (18%):</strong> ₹{viewData.gst_amount || 0}
+                  </p>
+                  <p className="mb-1">
+                    <strong>Platform Fee (2%):</strong> ₹{viewData.platform_fee || 0}
+                  </p>
+                  {viewData.discount_amount > 0 && (
+                    <p className="mb-1">
+                      <strong>Discount {viewData.coupon_code ? `(${viewData.coupon_code})` : ''}:</strong> -₹{viewData.discount_amount}
+                    </p>
+                  )}
+                  <p className="mb-1">
+                    <strong>Total Order Amount:</strong> ₹{viewData.user_total_amount}
                   </p>
 
                   <p className="mb-1">
