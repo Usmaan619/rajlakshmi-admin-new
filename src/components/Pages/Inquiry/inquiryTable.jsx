@@ -206,6 +206,18 @@ const InquiryTable = ({
                 <p>
                   <strong>Message:</strong> {viewData.message}
                 </p>
+                <p>
+                  <strong>Shipping Charge:</strong> {viewData.shipping_charge || 0}
+                </p>
+                <p>
+                  <strong>GST Amount:</strong> {viewData.gst_amount || 0}
+                </p>
+                <p>
+                  <strong>Discount Amount:</strong> {viewData.discount_amount || 0}
+                </p>
+                <p>
+                  <strong>Platform Fee:</strong> {viewData.platform_fee || 0}
+                </p>
               </div>
 
               <div className="modal-footer">
